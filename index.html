@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lechowicz – Nauka</title>
+  <style>
+    /* Base layout */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      padding: 24px 16px;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #fef6e4 0%, #e0f2fe 100%);
+      color: #1e293b;
+    }
+    h1 {
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      text-align: center;
+    }
+    p.sub {
+      margin-top: .5rem;
+      font-size: 1.15rem;
+      color: #475569;
+      text-align: center;
+    }
+
+    /* Subject buttons */
+    .menu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+      width: 100%;
+      max-width: 640px;
+    }
+    .btn {
+      flex: 1 1 240px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .6rem;
+      padding: 2rem 1rem;
+      border-radius: 24px;
+      text-decoration: none;
+      color: #fff;
+      font-size: 1.6rem;
+      font-weight: 700;
+      box-shadow: 0 8px 0 rgba(0,0,0,.15);
+      transition: transform .12s, box-shadow .12s;
+    }
+    .btn .icon { font-size: 3.5rem; line-height: 1; }
+    .btn small { font-size: .95rem; font-weight: 500; opacity: .9; }
+    .btn:hover { transform: translateY(-3px); }
+    .btn:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+
+    .english { background: #3b82f6; }
+    .math    { background: #94a3b8; cursor: not-allowed; }
+    .math:hover, .math:active { transform: none; box-shadow: 0 8px 0 rgba(0,0,0,.15); }
+
+    footer { font-size: .85rem; color: #64748b; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Witaj! 👋</h1>
+    <p class="sub">Wybierz, czego chcesz się dziś uczyć</p>
+  </header>
+
+  <main class="menu">
+    <!-- English: redirects to Literki (GitHub Pages project site under this domain) -->
+    <a class="btn english" href="/angielski_hania/">
+      <span class="icon">🇬🇧</span>
+      Angielski
+      <small>Literki</small>
+    </a>
+
+    <!-- Math: placeholder, no target yet -->
+    <a class="btn math" aria-disabled="true" onclick="return false;">
+      <span class="icon">🔢</span>
+      Matematyka
+      <small>Wkrótce</small>
+    </a>
+  </main>
+
+  <footer>lechowicz.org</footer>
+</body>
+</html>
