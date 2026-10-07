@@ -74,7 +74,7 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
     <a class="back" href="/">← Menu</a>
   </header>
 
-  <p class="lbl">Które tabliczki?</p>
+  <p class="lbl">Jakie liczby mnożymy?</p>
   <div class="chips" id="tables"></div>
 
   <p class="lbl">Rodzaj gry</p>
@@ -157,7 +157,8 @@ function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floo
 // Random tasks from selected tables, no duplicates within a round when possible
 function makeQueue(){
   const pool = [];
-  for (const a of selected) for (let b = 1; b <= 10; b++) pool.push(Math.random() < .5 ? [a, b] : [b, a]);
+  // Both factors come only from the selected numbers (e.g. 1-5 selected -> max 5 x 5)
+  for (const a of selected) for (const b of selected) pool.push([a, b]);
   shuffle(pool);
   const out = [];
   while (out.length < ROUND) out.push(pool[out.length % pool.length]);
