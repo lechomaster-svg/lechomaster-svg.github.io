@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tabliczka">
+<title>Tabliczka mnożenia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Same look as Literki: notebook paper, Fredoka/Nunito, blue accent */
+:root{
+  --paper:#FBFAF5;--line:#DCE6F2;--margin:#F1B8B8;--ink:#1D2B4A;--muted:#5D6A82;
+  --tile:#FFFFFF;--tile-edge:#C9D3E3;--accent:#2F5BD3;--accent-ink:#FFFFFF;--hl:#FFE36E;
+  --ok:#1E8A55;--ok-soft:#DDF3E6;--bad:#C2413B;--bad-soft:#FBE3E1;
+  --display:"Fredoka","Nunito",system-ui,sans-serif;--body:"Nunito",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141B2B;--line:#222C42;--margin:#5A2E35;--ink:#E8EDF7;--muted:#9AA6BD;
+  --tile:#1D2639;--tile-edge:#34405A;--accent:#7FA0F7;--accent-ink:#0E1424;--hl:#8A7420;
+  --ok:#5BCF92;--ok-soft:#163626;--bad:#F08A84;--bad-soft:#3D1D1D;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--line) 31px 32px)}
+main{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:flex;flex-direction:column;gap:20px;
+  border-left:2px solid var(--margin);min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-family:var(--display);font-weight:600;font-size:1.6rem;margin:0}
+a.back{font-weight:700;color:var(--accent);text-decoration:none;font-size:.95rem}
+.lbl{margin:0 0 -12px;text-align:center;font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.chips button{padding:7px 0;width:44px;font-size:1rem;border-color:var(--tile-edge);color:var(--muted)}
+.chips button.wide{width:auto;padding:7px 12px}
+.chips button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.status{display:flex;justify-content:space-between;gap:12px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:-12px}
+.status .g{color:var(--ok)}.status .b{color:var(--bad)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar>span{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.card{display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center;padding-block:8px}
+.task{font-family:var(--display);font-weight:600;font-size:3.4rem;line-height:1.1;margin:0;font-variant-numeric:tabular-nums}
+.ans{font-family:var(--display);font-weight:600;font-size:2.2rem;text-align:center;width:160px;padding:8px 12px;
+  border:2px dashed var(--accent);border-radius:12px;background:var(--tile);color:var(--ink);outline:none;caret-color:var(--accent)}
+.ans:focus{border-style:solid;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.ans.ok{border:2px solid var(--ok);background:var(--ok-soft);color:var(--ok)}
+.ans.bad{border:2px solid var(--bad);background:var(--bad-soft);color:var(--bad)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:360px}
+.choices button{font-family:var(--display);font-weight:600;font-size:1.8rem;padding:12px 10px;border:2px solid var(--tile-edge);
+  background:var(--tile);color:var(--ink);border-radius:12px}
+.choices button:disabled{cursor:default}
+.choices button.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.choices button.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.msg{min-height:1.6em;font-weight:700;margin:0;font-size:1.1rem}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button{font:inherit;font-weight:700;border-radius:10px;padding:11px 18px;cursor:pointer;border:2px solid var(--accent);background:transparent;color:var(--accent)}
+button.main{background:var(--accent);color:var(--accent-ink)}
+button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
+.sumbig{font-family:var(--display);font-weight:600;font-size:3rem;margin:0;font-variant-numeric:tabular-nums}
+.pl{font-size:1.15rem;color:var(--muted);margin:0}
+.list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.list span{font-family:var(--display);font-weight:600;padding:4px 10px;border-radius:8px;background:var(--bad-soft);color:var(--bad)}
+.hint{color:var(--muted);font-size:.9rem;margin:0;text-align:center}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .25s ease-out}@keyframes pop{50%{transform:scale(1.08)}}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>✖️ Tabliczka mnożenia</h1>
+    <a class="back" href="/">← Menu</a>
+  </header>
+
+  <p class="lbl">Które tabliczki?</p>
+  <div class="chips" id="tables"></div>
+
+  <p class="lbl">Rodzaj gry</p>
+  <div class="chips" id="modes">
+    <button type="button" class="wide" data-mode="type" aria-pressed="true">Wpisz</button>
+    <button type="button" class="wide" data-mode="choice" aria-pressed="false">Wybierz</button>
+  </div>
+
+  <div id="game">
+    <div class="status"><span id="qpos"></span><span><span class="g" id="good">0</span> · <span class="b" id="bad">0</span></span></div>
+    <div class="bar" aria-hidden="true" style="margin-top:20px"><span id="prog"></span></div>
+
+    <section class="card" id="card" style="margin-top:20px">
+      <p class="task" id="task"></p>
+      <form id="typeBox" autocomplete="off">
+        <input class="ans" id="ans" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Wynik">
+      </form>
+      <div class="choices" id="choiceBox" hidden></div>
+      <p class="msg" id="msg"></p>
+      <div class="row">
+        <button class="main" id="checkBtn" type="button">Sprawdź</button>
+        <button id="nextBtn" type="button">Pomiń</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" id="summary" hidden>
+    <p class="pl">Koniec rundy</p>
+    <p class="sumbig" id="sumBig"></p>
+    <p class="msg ok" id="sumMsg"></p>
+    <p class="pl" id="wrongHead" hidden>Te działania były źle:</p>
+    <div class="list" id="wrongList"></div>
+    <div class="row">
+      <button class="main" id="repWrong">Powtórz złe</button>
+      <button id="newRound">Nowa runda</button>
+    </div>
+  </section>
+
+  <p class="hint">Marcin Lechowicz</p>
+</main>
+
+<script>
+// Round settings
+const ROUND = 10;
+let selected = new Set([1,2,3,4,5,6,7,8,9,10]);
+let mode = 'type';
+let queue = [], idx = 0, good = 0, bad = 0, wrong = [], answered = false, timer = null;
+
+const $ = id => document.getElementById(id);
+
+// Build table chips 1..10 plus "all"
+function buildTables(){
+  const box = $('tables');
+  box.innerHTML = '';
+  for (let n = 1; n <= 10; n++){
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = n;
+    b.setAttribute('aria-pressed', selected.has(n));
+    b.onclick = () => {
+      if (selected.has(n) && selected.size > 1) selected.delete(n); else selected.add(n);
+      buildTables(); newRound();
+    };
+    box.appendChild(b);
+  }
+  const all = document.createElement('button');
+  all.type = 'button'; all.className = 'wide'; all.textContent = 'Wszystkie';
+  all.setAttribute('aria-pressed', selected.size === 10);
+  all.onclick = () => { selected = new Set([1,2,3,4,5,6,7,8,9,10]); buildTables(); newRound(); };
+  box.appendChild(all);
+}
+
+document.querySelectorAll('#modes button').forEach(b => b.onclick = () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll('#modes button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  showTask();
+});
+
+function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+// Random tasks from selected tables, no duplicates within a round when possible
+function makeQueue(){
+  const pool = [];
+  for (const a of selected) for (let b = 1; b <= 10; b++) pool.push(Math.random() < .5 ? [a, b] : [b, a]);
+  shuffle(pool);
+  const out = [];
+  while (out.length < ROUND) out.push(pool[out.length % pool.length]);
+  return out;
+}
+
+function startRound(tasks){
+  clearTimeout(timer); timer = null;
+  queue = tasks; idx = 0; good = 0; bad = 0; wrong = [];
+  $('summary').hidden = true; $('game').hidden = false;
+  showTask();
+}
+function newRound(){ startRound(makeQueue()); }
+
+function showTask(){
+  if (idx >= queue.length) return finish();
+  answered = false;
+  const [a, b] = queue[idx];
+  $('task').textContent = `${a} × ${b} = ?`;
+  $('qpos').textContent = `Pytanie ${idx + 1} / ${queue.length}`;
+  $('good').textContent = good; $('bad').textContent = bad;
+  $('prog').style.width = (idx / queue.length * 100) + '%';
+  $('msg').textContent = ''; $('msg').className = 'msg';
+  $('nextBtn').textContent = 'Pomiń';
+  const typing = mode === 'type';
+  $('typeBox').hidden = !typing; $('checkBtn').hidden = !typing; $('choiceBox').hidden = typing;
+  if (typing){
+    const inp = $('ans'); inp.value = ''; inp.className = 'ans'; inp.disabled = false; inp.focus();
+  } else buildChoices(a * b);
+}
+
+// Four options: correct plus nearby plausible results
+function buildChoices(res){
+  const [a, b] = queue[idx];
+  const opts = new Set([res]);
+  const cands = [res + a, res - a, res + b, res - b, res + 1, res - 1, res + 10, res - 10].filter(x => x > 0);
+  shuffle(cands);
+  for (const c of cands){ if (opts.size >= 4) break; opts.add(c); }
+  while (opts.size < 4) opts.add(res + opts.size * 2);
+  const box = $('choiceBox'); box.innerHTML = '';
+  shuffle([...opts]).forEach(v => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.textContent = v;
+    btn.onclick = () => {
+      if (answered) return;
+      box.querySelectorAll('button').forEach(x => { x.disabled = true; if (+x.textContent === res) x.classList.add('ok'); });
+      if (v !== res) btn.classList.add('bad');
+      judge(v === res);
+    };
+    box.appendChild(btn);
+  });
+}
+
+function check(){
+  if (answered) return next();
+  const inp = $('ans'), v = inp.value.trim();
+  if (v === '') { inp.focus(); return; }
+  const [a, b] = queue[idx];
+  const ok = +v === a * b;
+  inp.className = 'ans ' + (ok ? 'ok' : 'bad'); inp.disabled = true;
+  judge(ok);
+}
+
+const praise = ['Super! 🎉', 'Brawo! ⭐', 'Świetnie! 👏', 'Dobrze! ✅', 'Ekstra! 🚀'];
+function judge(ok){
+  answered = true;
+  const [a, b] = queue[idx];
+  const m = $('msg');
+  if (ok){
+    good++; m.textContent = praise[Math.floor(Math.random() * praise.length)]; m.className = 'msg ok pop';
+    timer = setTimeout(next, 900);
+  } else {
+    bad++; wrong.push([a, b]);
+    m.textContent = `${a} × ${b} = ${a * b}`; m.className = 'msg bad pop';
+    $('nextBtn').textContent = 'Dalej';
+  }
+  $('good').textContent = good; $('bad').textContent = bad;
+}
+
+function next(){
+  clearTimeout(timer); timer = null;
+  if (!answered){ bad++; wrong.push(queue[idx]); }
+  idx++; showTask();
+}
+
+function finish(){
+  $('prog').style.width = '100%';
+  $('game').hidden = true; $('summary').hidden = false;
+  $('sumBig').textContent = `${good} / ${queue.length}`;
+  const pct = good / queue.length;
+  $('sumMsg').textContent = pct === 1 ? 'Bezbłędnie! 🏆' : pct >= .7 ? 'Bardzo dobrze! 💪' : 'Ćwicz dalej, dasz radę! 🙂';
+  $('wrongHead').hidden = wrong.length === 0;
+  $('repWrong').hidden = wrong.length === 0;
+  $('wrongList').innerHTML = wrong.map(([a, b]) => `<span>${a} × ${b} = ${a * b}</span>`).join('');
+}
+
+$('typeBox').onsubmit = e => { e.preventDefault(); check(); };
+$('checkBtn').onclick = check;
+$('nextBtn').onclick = next;
+$('newRound').onclick = newRound;
+$('repWrong').onclick = () => startRound(shuffle([...wrong]));
+
+buildTables();
+newRound();
+</script>
+</body>
+</html>
