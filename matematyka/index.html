@@ -74,6 +74,9 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 .rank .pos{width:2em;text-align:center;font-weight:700}
 .rank .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:700}
 .rank .sc{color:var(--muted);white-space:nowrap}
+.whorow{display:flex;justify-content:flex-end;margin-top:-12px}
+.who{font:inherit;font-weight:700;font-size:.92rem;padding:6px 12px;border-radius:999px;border:1px solid var(--tile-edge);background:var(--tile);color:var(--ink);cursor:pointer}
+.namein{font:inherit;font-size:1.3rem;text-align:center;padding:10px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--tile);color:var(--ink);max-width:100%;width:280px}
 .hint{color:var(--muted);font-size:.9rem;margin:0;text-align:center}
 @media (prefers-reduced-motion:no-preference){.pop{animation:pop .25s ease-out}@keyframes pop{50%{transform:scale(1.08)}}}
 </style>
@@ -84,7 +87,15 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
     <h1>✖️ Tabliczka mnożenia</h1>
     <a class="back" href="/">← Menu</a>
   </header>
+  <div class="whorow"><button type="button" id="whoBtn" class="who" hidden></button></div>
 
+  <form class="card" id="nameBox" hidden autocomplete="off">
+    <p class="pl" style="color:var(--ink);font-size:1.3rem;font-family:var(--display)">Jak masz na imię?</p>
+    <input id="nameIn" class="namein" maxlength="20" placeholder="Wpisz imię" aria-label="Imię">
+    <button class="main" type="submit">Zaczynamy!</button>
+  </form>
+
+  <div id="app" hidden style="display:flex;flex-direction:column;gap:20px">
   <p class="lbl">Zakres</p>
   <div class="chips" id="ranges">
     <button type="button" class="wide" data-range="50" aria-pressed="true">Do 50</button>
@@ -128,7 +139,6 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
       <button id="newRound">Nowa runda</button>
     </div>
     <form class="rankform" id="rankForm" hidden autocomplete="off">
-      <input id="rankName" maxlength="20" placeholder="Twoje imię" aria-label="Twoje imię">
       <button class="main" type="submit" id="rankSend">🏆 Dodaj do rankingu</button>
     </form>
     <p class="hint" id="rankMsg" hidden></p>
@@ -143,6 +153,8 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
     <ol class="rank" id="rankList"></ol>
     <p class="hint" id="rankInfo"></p>
   </details>
+
+  </div>
 
   <p class="hint">Marcin Lechowicz</p>
 </main>
@@ -288,7 +300,7 @@ function finish(){
   $('wrongList').innerHTML = wrong.map(([a, b]) => `<span>${a} × ${b} = ${a * b}</span>`).join('');
   // Ranking only for full rounds in "Wpisz" mode
   const rm = $('rankMsg');
-  if (RANK.url && rankable && !ranked){ $('rankForm').hidden = false; $('rankName').value = playerName(); rm.hidden = true; }
+  if (RANK.url && rankable && !ranked){ $('rankForm').hidden = false; rm.hidden = true; }
   else if (RANK.url && !rankable && mode === 'choice'){ $('rankForm').hidden = true; rm.hidden = false; rm.textContent = 'Do rankingu liczą się rundy w trybie „Wpisz”.'; }
   else { $('rankForm').hidden = true; rm.hidden = true; }
 }
@@ -305,8 +317,9 @@ const RANK = { url: 'https://gmrkbgttpmyutjetotqb.supabase.co', key: 'sb_publish
 const RR_LABEL = { 50: 'Do 50', 100: 'Całość (do 100)' };
 let rankReq = 0, rankNext = null;
 function rankHeaders(){ return RANK.key.startsWith('eyJ') ? { apikey: RANK.key, Authorization: 'Bearer ' + RANK.key } : { apikey: RANK.key }; }
+let nameCleared = false;
 function playerName(){
-  try { const n = localStorage.getItem('tabliczka-name'); if (n) return n; } catch (e) {}
+  try { const n = localStorage.getItem('tabliczka-name'); if (n) return n; if (n === '' || nameCleared) return ''; } catch (e) {}
   try { const d = JSON.parse(localStorage.getItem('literki-v1') || 'null'); if (d && d.name) return d.name; } catch (e) {}
   return '';
 }
@@ -338,9 +351,8 @@ async function loadRank(r){
 }
 $('rankForm').onsubmit = async e => {
   e.preventDefault();
-  const name = $('rankName').value.trim().slice(0, 20);
-  if (!name){ $('rankName').focus(); return; }
-  try { localStorage.setItem('tabliczka-name', name); } catch (e) {}
+  const name = playerName().trim().slice(0, 20);
+  if (!name){ showName(); return; }
   const btn = $('rankSend'); btn.disabled = true; btn.textContent = 'Wysyłam…';
   try {
     const res = await fetch(RANK.url + '/rest/v1/math_scores', { method: 'POST',
@@ -356,8 +368,26 @@ $('rankForm').onsubmit = async e => {
 $('rankBox').addEventListener('toggle', () => { if ($('rankBox').open){ loadRank(rankNext || range); rankNext = null; } });
 document.querySelectorAll('#rankTabs button').forEach(b => b.onclick = () => loadRank(+b.dataset.rr));
 
+// ---- player name (asked first, like Literki) ----
+function showName(){
+  const n = playerName(), has = !!n;
+  $('nameBox').hidden = has; $('app').hidden = !has; $('whoBtn').hidden = !has;
+  if (has) $('whoBtn').textContent = '👤 ' + n + ' · zmień';
+  else { clearTimeout(timer); timer = null; $('nameIn').value = ''; setTimeout(() => $('nameIn').focus(), 50); }
+}
+$('nameBox').onsubmit = e => {
+  e.preventDefault();
+  let n = $('nameIn').value.trim().slice(0, 20);
+  if (!n){ $('nameIn').focus(); return; }
+  n = n.charAt(0).toUpperCase() + n.slice(1);
+  try { localStorage.setItem('tabliczka-name', n); } catch (e) {}
+  showName(); newRound();
+};
+$('whoBtn').onclick = () => { try { localStorage.setItem('tabliczka-name', ''); } catch (e) {} nameCleared = true; showName(); };
+
 renderToggles();
-newRound();
+showName();
+if (playerName()) newRound();
 </script>
 </body>
 </html>
