@@ -63,6 +63,17 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 .pl{font-size:1.15rem;color:var(--muted);margin:0}
 .list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .list span{font-family:var(--display);font-weight:600;padding:4px 10px;border-radius:8px;background:var(--bad-soft);color:var(--bad)}
+.spk{padding:6px 14px;font-size:.95rem;border-color:var(--tile-edge);color:var(--muted)}
+.rankform{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%}
+.rankform input{font:inherit;font-weight:700;min-width:0;flex:1 1 160px;max-width:240px;padding:10px 12px;border-radius:10px;border:2px solid var(--tile-edge);background:var(--tile);color:var(--ink)}
+.rankbox{background:var(--tile);border:1px solid var(--tile-edge);border-radius:12px;padding:12px 14px}
+.rankbox summary{cursor:pointer;font-weight:700}
+.rank{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rank li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;background:var(--paper);font-variant-numeric:tabular-nums}
+.rank li.me{outline:2px solid var(--accent)}
+.rank .pos{width:2em;text-align:center;font-weight:700}
+.rank .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:700}
+.rank .sc{color:var(--muted);white-space:nowrap}
 .hint{color:var(--muted);font-size:.9rem;margin:0;text-align:center}
 @media (prefers-reduced-motion:no-preference){.pop{animation:pop .25s ease-out}@keyframes pop{50%{transform:scale(1.08)}}}
 </style>
@@ -74,8 +85,11 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
     <a class="back" href="/">← Menu</a>
   </header>
 
-  <p class="lbl">Jakie liczby mnożymy?</p>
-  <div class="chips" id="tables"></div>
+  <p class="lbl">Zakres</p>
+  <div class="chips" id="ranges">
+    <button type="button" class="wide" data-range="50" aria-pressed="true">Do 50</button>
+    <button type="button" class="wide" data-range="100" aria-pressed="false">Całość (do 100)</button>
+  </div>
 
   <p class="lbl">Rodzaj gry</p>
   <div class="chips" id="modes">
@@ -89,6 +103,7 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 
     <section class="card" id="card" style="margin-top:20px">
       <p class="task" id="task"></p>
+      <button type="button" class="spk" id="spkBtn" aria-label="Przeczytaj działanie">🔊 Przeczytaj</button>
       <form id="typeBox" autocomplete="off">
         <input class="ans" id="ans" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Wynik">
       </form>
@@ -107,11 +122,27 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
     <p class="msg ok" id="sumMsg"></p>
     <p class="pl" id="wrongHead" hidden>Te działania były źle:</p>
     <div class="list" id="wrongList"></div>
+    <p class="pl" id="sumTime"></p>
     <div class="row">
       <button class="main" id="repWrong">Powtórz złe</button>
       <button id="newRound">Nowa runda</button>
     </div>
+    <form class="rankform" id="rankForm" hidden autocomplete="off">
+      <input id="rankName" maxlength="20" placeholder="Twoje imię" aria-label="Twoje imię">
+      <button class="main" type="submit" id="rankSend">🏆 Dodaj do rankingu</button>
+    </form>
+    <p class="hint" id="rankMsg" hidden></p>
   </section>
+
+  <details class="rankbox" id="rankBox">
+    <summary>🏆 Ranking</summary>
+    <div class="chips" id="rankTabs" style="margin-top:12px">
+      <button type="button" class="wide" data-rr="50">Do 50</button>
+      <button type="button" class="wide" data-rr="100">Całość (do 100)</button>
+    </div>
+    <ol class="rank" id="rankList"></ol>
+    <p class="hint" id="rankInfo"></p>
+  </details>
 
   <p class="hint">Marcin Lechowicz</p>
 </main>
@@ -119,62 +150,58 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 <script>
 // Round settings
 const ROUND = 10;
-let selected = new Set([1,2,3,4,5,6,7,8,9,10]);
+let range = 50;              // 50 = products up to 50, 100 = whole table
 let mode = 'type';
 let queue = [], idx = 0, good = 0, bad = 0, wrong = [], answered = false, timer = null;
+let startedAt = 0, elapsed = 0, ranked = false, rankable = false;
 
 const $ = id => document.getElementById(id);
+const KEY = 'tabliczka-v1';
+try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d) { if (d.range === 100) range = 100; if (d.mode === 'choice') mode = 'choice'; } } catch (e) {}
+function saveSettings(){ try { localStorage.setItem(KEY, JSON.stringify({ range, mode })); } catch (e) {} }
 
-// Build table chips 1..10 plus "all"
-function buildTables(){
-  const box = $('tables');
-  box.innerHTML = '';
-  for (let n = 1; n <= 10; n++){
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = n;
-    b.setAttribute('aria-pressed', selected.has(n));
-    b.onclick = () => {
-      if (selected.has(n) && selected.size > 1) selected.delete(n); else selected.add(n);
-      buildTables(); newRound();
-    };
-    box.appendChild(b);
-  }
-  const all = document.createElement('button');
-  all.type = 'button'; all.className = 'wide'; all.textContent = 'Wszystkie';
-  all.setAttribute('aria-pressed', selected.size === 10);
-  all.onclick = () => { selected = new Set([1,2,3,4,5,6,7,8,9,10]); buildTables(); newRound(); };
-  box.appendChild(all);
+// ---- Polish speech ----
+function speak(text){
+  try {
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'pl-PL'; u.rate = 0.95;
+    const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith('pl')); if (v) u.voice = v;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) {}
 }
+function sayTask(){ if (idx < queue.length){ const [a, b] = queue[idx]; speak(`${a} razy ${b}`); } }
 
-document.querySelectorAll('#modes button').forEach(b => b.onclick = () => {
-  mode = b.dataset.mode;
-  document.querySelectorAll('#modes button').forEach(x => x.setAttribute('aria-pressed', x === b));
-  showTask();
-});
+function renderToggles(){
+  document.querySelectorAll('#ranges button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.range === range)));
+  document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+}
+document.querySelectorAll('#ranges button').forEach(b => b.onclick = () => { range = +b.dataset.range; saveSettings(); renderToggles(); newRound(); });
+document.querySelectorAll('#modes button').forEach(b => b.onclick = () => { mode = b.dataset.mode; saveSettings(); renderToggles(); newRound(); });
 
 function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
-// Random tasks from selected tables, no duplicates within a round when possible
+// Tasks a x b with a,b in 1..10 and product within the selected range (skip trivial x1 when possible)
 function makeQueue(){
-  const pool = [];
-  // Both factors come only from the selected numbers (e.g. 1-5 selected -> max 5 x 5)
-  for (const a of selected) for (const b of selected) pool.push([a, b]);
+  let pool = [];
+  for (let a = 1; a <= 10; a++) for (let b = 1; b <= 10; b++) if (a * b <= range) pool.push([a, b]);
+  const harder = pool.filter(([a, b]) => a > 1 && b > 1);
+  if (harder.length >= ROUND) pool = harder;
   shuffle(pool);
-  const out = [];
-  while (out.length < ROUND) out.push(pool[out.length % pool.length]);
-  return out;
+  return pool.slice(0, ROUND);
 }
 
-function startRound(tasks){
+function startRound(tasks, isRepeat){
   clearTimeout(timer); timer = null;
-  queue = tasks; idx = 0; good = 0; bad = 0; wrong = [];
-  $('summary').hidden = true; $('game').hidden = false;
+  queue = tasks; idx = 0; good = 0; bad = 0; wrong = []; ranked = false;
+  rankable = !isRepeat && mode === 'type' && tasks.length === ROUND;
+  startedAt = 0; elapsed = 0;
+  $('summary').hidden = true; $('game').hidden = false; $('rankForm').hidden = true; $('rankMsg').hidden = true;
   showTask();
 }
-function newRound(){ startRound(makeQueue()); }
+function newRound(){ startRound(makeQueue(), false); }
 
 function showTask(){
   if (idx >= queue.length) return finish();
+  if (!startedAt) startedAt = Date.now();
   answered = false;
   const [a, b] = queue[idx];
   $('task').textContent = `${a} × ${b} = ?`;
@@ -188,6 +215,7 @@ function showTask(){
   if (typing){
     const inp = $('ans'); inp.value = ''; inp.className = 'ans'; inp.disabled = false; inp.focus();
   } else buildChoices(a * b);
+  sayTask();
 }
 
 // Four options: correct plus nearby plausible results
@@ -234,6 +262,7 @@ function judge(ok){
     bad++; wrong.push([a, b]);
     m.textContent = `${a} × ${b} = ${a * b}`; m.className = 'msg bad pop';
     $('nextBtn').textContent = 'Dalej';
+    speak(`${a} razy ${b} to ${a * b}`);
   }
   $('good').textContent = good; $('bad').textContent = bad;
 }
@@ -244,24 +273,90 @@ function next(){
   idx++; showTask();
 }
 
+function fmtTime(sec){ const s = Math.round(sec); return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`; }
+
 function finish(){
+  elapsed = startedAt ? (Date.now() - startedAt) / 1000 : 0;
   $('prog').style.width = '100%';
   $('game').hidden = true; $('summary').hidden = false;
   $('sumBig').textContent = `${good} / ${queue.length}`;
   const pct = good / queue.length;
   $('sumMsg').textContent = pct === 1 ? 'Bezbłędnie! 🏆' : pct >= .7 ? 'Bardzo dobrze! 💪' : 'Ćwicz dalej, dasz radę! 🙂';
+  $('sumTime').textContent = `Czas: ${fmtTime(elapsed)} · zakres: ${range === 50 ? 'do 50' : 'całość'}`;
   $('wrongHead').hidden = wrong.length === 0;
   $('repWrong').hidden = wrong.length === 0;
   $('wrongList').innerHTML = wrong.map(([a, b]) => `<span>${a} × ${b} = ${a * b}</span>`).join('');
+  // Ranking only for full rounds in "Wpisz" mode
+  const rm = $('rankMsg');
+  if (RANK.url && rankable && !ranked){ $('rankForm').hidden = false; $('rankName').value = playerName(); rm.hidden = true; }
+  else if (RANK.url && !rankable && mode === 'choice'){ $('rankForm').hidden = true; rm.hidden = false; rm.textContent = 'Do rankingu liczą się rundy w trybie „Wpisz”.'; }
+  else { $('rankForm').hidden = true; rm.hidden = true; }
 }
 
 $('typeBox').onsubmit = e => { e.preventDefault(); check(); };
 $('checkBtn').onclick = check;
 $('nextBtn').onclick = next;
+$('spkBtn').onclick = sayTask;
 $('newRound').onclick = newRound;
-$('repWrong').onclick = () => startRound(shuffle([...wrong]));
+$('repWrong').onclick = () => startRound(shuffle([...wrong]), true);
 
-buildTables();
+/* ---- shared online ranking (Supabase, table math_scores) ---- */
+const RANK = { url: 'https://gmrkbgttpmyutjetotqb.supabase.co', key: 'sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc' };
+const RR_LABEL = { 50: 'Do 50', 100: 'Całość (do 100)' };
+let rankReq = 0, rankNext = null;
+function rankHeaders(){ return RANK.key.startsWith('eyJ') ? { apikey: RANK.key, Authorization: 'Bearer ' + RANK.key } : { apikey: RANK.key }; }
+function playerName(){
+  try { const n = localStorage.getItem('tabliczka-name'); if (n) return n; } catch (e) {}
+  try { const d = JSON.parse(localStorage.getItem('literki-v1') || 'null'); if (d && d.name) return d.name; } catch (e) {}
+  return '';
+}
+async function loadRank(r){
+  document.querySelectorAll('#rankTabs button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.rr === r)));
+  const l = $('rankList'), info = $('rankInfo'), my = ++rankReq; l.innerHTML = ''; info.textContent = 'Wczytuję…';
+  try {
+    const res = await fetch(RANK.url + '/rest/v1/math_scores?select=name,good,total,seconds&upto=eq.' + r + '&limit=3000', { headers: rankHeaders() });
+    if (!res.ok) throw new Error(res.status);
+    const rows = await res.json(); if (my !== rankReq) return; l.innerHTML = '';
+    const best = {};
+    rows.forEach(x => {
+      const k = x.name.trim().toLowerCase(), b = best[k], sec = +x.seconds;
+      if (!b || x.good > b.good || (x.good === b.good && sec < b.sec)) best[k] = { name: x.name.trim(), good: x.good, total: x.total, sec };
+    });
+    const top = Object.values(best).sort((a, b) => b.good - a.good || a.sec - b.sec).slice(0, 10);
+    const medal = ['🥇', '🥈', '🥉'], me = playerName().trim().toLowerCase();
+    let place = 0;
+    top.forEach((x, i) => {
+      if (i === 0 || x.good !== top[i - 1].good || Math.round(x.sec) !== Math.round(top[i - 1].sec)) place = i + 1;
+      const li = document.createElement('li'); if (x.name.toLowerCase() === me) li.className = 'me';
+      const a = document.createElement('span'); a.className = 'pos'; a.textContent = medal[place - 1] || String(place);
+      const n = document.createElement('span'); n.className = 'nm'; n.textContent = x.name;
+      const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = `${x.good}/${x.total} · ${fmtTime(x.sec)}`;
+      li.append(a, n, sc); l.appendChild(li);
+    });
+    info.textContent = top.length ? 'Liczy się najlepszy wynik każdej osoby: najpierw punkty, przy remisie krótszy czas.' : `Brak wyników w zakresie „${RR_LABEL[r]}”. Bądź pierwszy!`;
+  } catch (e) { if (my !== rankReq) return; info.textContent = 'Nie udało się wczytać rankingu. Sprawdź połączenie z internetem.'; }
+}
+$('rankForm').onsubmit = async e => {
+  e.preventDefault();
+  const name = $('rankName').value.trim().slice(0, 20);
+  if (!name){ $('rankName').focus(); return; }
+  try { localStorage.setItem('tabliczka-name', name); } catch (e) {}
+  const btn = $('rankSend'); btn.disabled = true; btn.textContent = 'Wysyłam…';
+  try {
+    const res = await fetch(RANK.url + '/rest/v1/math_scores', { method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }, rankHeaders()),
+      body: JSON.stringify({ name, upto: range, good, total: queue.length, seconds: Math.max(1, Math.round(elapsed * 10) / 10) }) });
+    if (!res.ok) throw new Error(res.status);
+    ranked = true; $('rankForm').hidden = true;
+    const m = $('rankMsg'); m.hidden = false; m.textContent = 'Dodano do rankingu! Zobacz niżej.';
+    const box = $('rankBox'); if (box.open) loadRank(range); else { rankNext = range; box.open = true; }
+  } catch (e) { btn.textContent = 'Nie udało się. Spróbuj ponownie'; }
+  btn.disabled = false; if (!ranked) setTimeout(() => { btn.textContent = '🏆 Dodaj do rankingu'; }, 2500); else btn.textContent = '🏆 Dodaj do rankingu';
+};
+$('rankBox').addEventListener('toggle', () => { if ($('rankBox').open){ loadRank(rankNext || range); rankNext = null; } });
+document.querySelectorAll('#rankTabs button').forEach(b => b.onclick = () => loadRank(+b.dataset.rr));
+
+renderToggles();
 newRound();
 </script>
 </body>
