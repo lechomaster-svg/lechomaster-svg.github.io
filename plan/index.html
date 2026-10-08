@@ -3,20 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan lekcji</title>
+<meta name="robots" content="noindex">
+<title>Plan lekcji 3b</title>
+<script data-goatcounter="https://lechomaster.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.2rem;
-    padding: 24px 16px; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: linear-gradient(135deg, #fef6e4 0%, #e0f2fe 100%); color: #1e293b; text-align: center; }
-  h1 { font-size: clamp(1.8rem, 6vw, 2.6rem); margin: 0; }
-  p { color: #475569; font-size: 1.1rem; margin: 0; }
-  a { font-weight: 700; color: #2563eb; text-decoration: none; }
+  body { margin: 0; min-height: 100vh; padding: 20px 16px 40px; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #fef6e4 0%, #e0f2fe 100%); color: #1e293b; }
+  main { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  h1 { font-size: clamp(1.6rem, 5vw, 2.2rem); margin: 0; }
+  a.back { font-weight: 700; color: #2563eb; text-decoration: none; }
+  .preview { background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 6px 20px rgba(15,23,42,.08); overflow-x: auto; }
+  .preview img { display: block; width: 100%; min-width: 640px; height: auto; border-radius: 8px; }
+  .hint { color: #475569; font-size: .9rem; margin: 0; text-align: center; }
+  .dl { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+  .dl a { flex: 1 1 240px; max-width: 340px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px; border-radius: 18px;
+    text-decoration: none; color: #fff; font-weight: 700; font-size: 1.15rem; box-shadow: 0 6px 0 rgba(0,0,0,.15); }
+  .dl a small { font-weight: 500; font-size: .9rem; opacity: .9; }
+  .dl a:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+  .small { background: #16a34a; } .big { background: #0ea5e9; }
 </style>
 </head>
 <body>
-  <h1>📅 Plan lekcji</h1>
-  <p>Plan pojawi się tu wkrótce.</p>
-  <a href="/">← Menu</a>
+<main>
+  <header>
+    <h1>📅 Plan lekcji 3b</h1>
+    <a class="back" href="/">← Menu</a>
+  </header>
+
+  <div class="preview"><img src="podglad.png" alt="Plan lekcji klasy 3b" width="1521" height="1075"></div>
+  <p class="hint">Na telefonie przesuń plan w bok albo pobierz PDF.</p>
+
+  <div class="dl">
+    <a class="small" href="plan_lekcji_3b_maly.pdf" download data-goatcounter-click="pobranie-plan-maly" data-goatcounter-title="Pobranie: plan mały">
+      ⬇️ Pobierz PDF – mały<small>mniejsza tabela na kartce A4</small>
+    </a>
+    <a class="big" href="plan_lekcji_3b_duzy.pdf" download data-goatcounter-click="pobranie-plan-duzy" data-goatcounter-title="Pobranie: plan duży">
+      ⬇️ Pobierz PDF – duży<small>tabela na całą kartkę A4</small>
+    </a>
+  </div>
+</main>
 </body>
 </html>
