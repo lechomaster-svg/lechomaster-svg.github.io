@@ -77,6 +77,8 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 .whorow{display:flex;justify-content:flex-end;margin-top:-12px}
 .who{font:inherit;font-weight:700;font-size:.92rem;padding:6px 12px;border-radius:999px;border:1px solid var(--tile-edge);background:var(--tile);color:var(--ink);cursor:pointer}
 .namein{font:inherit;font-size:1.3rem;text-align:center;padding:10px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--tile);color:var(--ink);max-width:100%;width:280px}
+#rstRow button.sm{padding:6px 14px;font-size:.9rem;border-color:var(--tile-edge);color:var(--muted)}
+#rstRow .q{font-weight:700;color:var(--muted);width:100%;text-align:center}
 .hint{color:var(--muted);font-size:.9rem;margin:0;text-align:center}
 @media (prefers-reduced-motion:no-preference){.pop{animation:pop .25s ease-out}@keyframes pop{50%{transform:scale(1.08)}}}
 </style>
@@ -125,6 +127,7 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
         <button id="nextBtn" type="button">Pomiń</button>
       </div>
     </section>
+    <div class="row" id="rstRow" style="margin-top:16px;align-items:center"></div>
   </div>
 
   <section class="card" id="summary" hidden>
@@ -384,6 +387,18 @@ $('nameBox').onsubmit = e => {
   showName(); newRound();
 };
 $('whoBtn').onclick = () => { try { localStorage.setItem('tabliczka-name', ''); } catch (e) {} nameCleared = true; showName(); };
+
+// ---- restart with inline confirmation (confirm() is not used) ----
+function rstUI(ask){
+  const r = $('rstRow'); r.innerHTML = '';
+  const mk = (t, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; if (cls) b.className = cls; b.onclick = fn; r.appendChild(b); };
+  if (ask){
+    const q = document.createElement('span'); q.className = 'q'; q.textContent = 'Zacząć od nowa? Wynik tej rundy się wyzeruje.'; r.appendChild(q);
+    mk('Tak, od nowa', 'main', () => { rstUI(false); newRound(); });
+    mk('Anuluj', '', () => rstUI(false));
+  } else mk('Zacznij od nowa', 'sm', () => rstUI(true));
+}
+rstUI(false);
 
 renderToggles();
 showName();
