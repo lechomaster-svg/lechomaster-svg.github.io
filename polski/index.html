@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lektura">
+<title>Quiz z lektury – Psie troski</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Same look as Literki: notebook paper, Fredoka/Nunito, blue accent */
+:root{
+  --paper:#FBFAF5;--line:#DCE6F2;--margin:#F1B8B8;--ink:#1D2B4A;--muted:#5D6A82;
+  --tile:#FFFFFF;--tile-edge:#C9D3E3;--accent:#2F5BD3;--accent-ink:#FFFFFF;--hl:#FFE36E;
+  --ok:#1E8A55;--ok-soft:#DDF3E6;--bad:#C2413B;--bad-soft:#FBE3E1;
+  --display:"Fredoka","Nunito",system-ui,sans-serif;--body:"Nunito",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141B2B;--line:#222C42;--margin:#5A2E35;--ink:#E8EDF7;--muted:#9AA6BD;
+  --tile:#1D2639;--tile-edge:#34405A;--accent:#7FA0F7;--accent-ink:#0E1424;--hl:#8A7420;
+  --ok:#5BCF92;--ok-soft:#163626;--bad:#F08A84;--bad-soft:#3D1D1D;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  background-image:repeating-linear-gradient(to bottom,transparent 0 31px,var(--line) 31px 32px)}
+main{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:flex;flex-direction:column;gap:20px;
+  border-left:2px solid var(--margin);min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-family:var(--display);font-weight:600;font-size:1.6rem;margin:0}
+a.back{font-weight:700;color:var(--accent);text-decoration:none;font-size:.95rem}
+.lbl{margin:0 0 -12px;text-align:center;font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.chips button{padding:7px 0;width:44px;font-size:1rem;border-color:var(--tile-edge);color:var(--muted)}
+.chips button.wide{width:auto;padding:7px 12px}
+.chips button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.status{display:flex;justify-content:space-between;gap:12px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:-12px}
+.status .g{color:var(--ok)}.status .b{color:var(--bad)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar>span{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.card{display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center;padding-block:8px}
+.task{font-family:var(--display);font-weight:600;font-size:3.4rem;line-height:1.1;margin:0;font-variant-numeric:tabular-nums}
+.ans{font-family:var(--display);font-weight:600;font-size:2.2rem;text-align:center;width:160px;padding:8px 12px;
+  border:2px dashed var(--accent);border-radius:12px;background:var(--tile);color:var(--ink);outline:none;caret-color:var(--accent)}
+.ans:focus{border-style:solid;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+.ans.ok{border:2px solid var(--ok);background:var(--ok-soft);color:var(--ok)}
+.ans.bad{border:2px solid var(--bad);background:var(--bad-soft);color:var(--bad)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:360px}
+.choices button{font-family:var(--display);font-weight:600;font-size:1.8rem;padding:12px 10px;border:2px solid var(--tile-edge);
+  background:var(--tile);color:var(--ink);border-radius:12px}
+.choices button:disabled{cursor:default}
+.choices button.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.choices button.bad{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.msg{min-height:1.6em;font-weight:700;margin:0;font-size:1.1rem}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button{font:inherit;font-weight:700;border-radius:10px;padding:11px 18px;cursor:pointer;border:2px solid var(--accent);background:transparent;color:var(--accent)}
+button.main{background:var(--accent);color:var(--accent-ink)}
+button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
+.sumbig{font-family:var(--display);font-weight:600;font-size:3rem;margin:0;font-variant-numeric:tabular-nums}
+.pl{font-size:1.15rem;color:var(--muted);margin:0}
+.list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.list span{font-family:var(--display);font-weight:600;padding:4px 10px;border-radius:8px;background:var(--bad-soft);color:var(--bad)}
+.spk{padding:6px 14px;font-size:.95rem;border-color:var(--tile-edge);color:var(--muted)}
+.rankform{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%}
+.rankform input{font:inherit;font-weight:700;min-width:0;flex:1 1 160px;max-width:240px;padding:10px 12px;border-radius:10px;border:2px solid var(--tile-edge);background:var(--tile);color:var(--ink)}
+.rankbox{background:var(--tile);border:1px solid var(--tile-edge);border-radius:12px;padding:12px 14px}
+.rankbox summary{cursor:pointer;font-weight:700}
+.rank{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rank li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;background:var(--paper);font-variant-numeric:tabular-nums}
+.rank li.me{outline:2px solid var(--accent)}
+.rank .pos{width:2em;text-align:center;font-weight:700}
+.rank .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:700}
+.rank .sc{color:var(--muted);white-space:nowrap}
+.whorow{display:flex;justify-content:flex-end;margin-top:-12px}
+.who{font:inherit;font-weight:700;font-size:.92rem;padding:6px 12px;border-radius:999px;border:1px solid var(--tile-edge);background:var(--tile);color:var(--ink);cursor:pointer}
+.namein{font:inherit;font-size:1.3rem;text-align:center;padding:10px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--tile);color:var(--ink);max-width:100%;width:280px}
+#rstRow button.sm{padding:6px 14px;font-size:.9rem;border-color:var(--tile-edge);color:var(--muted)}
+#rstRow .q{font-weight:700;color:var(--muted);width:100%;text-align:center}
+.hint{color:var(--muted);font-size:.9rem;margin:0;text-align:center}
+@media (prefers-reduced-motion:no-preference){.pop{animation:pop .25s ease-out}@keyframes pop{50%{transform:scale(1.08)}}}
+
+/* Reading quiz extras */
+.book{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--tile-edge);border-radius:12px;background:var(--tile)}
+.book .ic{font-size:2.4rem;line-height:1}
+.book .t{margin:0;font-family:var(--display);font-weight:600;font-size:1.25rem}
+.book .a{margin:0;color:var(--muted);font-size:.95rem}
+.q{font-family:var(--display);font-weight:600;font-size:1.45rem;line-height:1.35;margin:0;text-wrap:balance}
+.choices.txt{grid-template-columns:1fr;max-width:460px}
+.choices.txt button{font-size:1.1rem;padding:12px 14px;text-align:left;line-height:1.3}
+.wl{display:flex;flex-direction:column;gap:10px;width:100%;max-width:460px;text-align:left}
+.wl div{padding:8px 12px;border-radius:8px;background:var(--bad-soft)}
+.wl span{color:var(--ok);font-weight:700}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>📖 Quiz z lektury</h1>
+    <a class="back" href="/">← Menu</a>
+  </header>
+  <div class="whorow"><button type="button" id="whoBtn" class="who" hidden></button></div>
+
+  <form class="card" id="nameBox" hidden autocomplete="off">
+    <p class="pl" style="color:var(--ink);font-size:1.3rem;font-family:var(--display)">Jak masz na imię?</p>
+    <input id="nameIn" class="namein" maxlength="20" placeholder="Wpisz imię" aria-label="Imię">
+    <button class="main" type="submit">Zaczynamy!</button>
+  </form>
+
+  <div id="app" hidden style="display:flex;flex-direction:column;gap:20px">
+  <div class="book">
+    <span class="ic" aria-hidden="true">🐕</span>
+    <div><p class="t">Psie troski</p><p class="a">Tom Justyniarski</p></div>
+  </div>
+
+  <p class="lbl">Rodzaj quizu</p>
+  <div class="chips" id="modes">
+    <button type="button" class="wide" data-mode="story" aria-pressed="true">Treść książki</button>
+    <button type="button" class="wide" data-mode="words" aria-pressed="false">Trudne słowa</button>
+  </div>
+
+  <div id="game">
+    <div class="status"><span id="qpos"></span><span><span class="g" id="good">0</span> · <span class="b" id="bad">0</span></span></div>
+    <div class="bar" aria-hidden="true" style="margin-top:20px"><span id="prog"></span></div>
+
+    <section class="card" style="margin-top:20px">
+      <p class="pl" id="chap"></p>
+      <p class="q" id="task"></p>
+      <button type="button" class="spk" id="spkBtn" aria-label="Przeczytaj pytanie">🔊 Przeczytaj</button>
+      <div class="choices txt" id="choiceBox"></div>
+      <p class="msg" id="msg"></p>
+      <div class="row">
+        <button id="nextBtn" type="button">Pomiń</button>
+      </div>
+    </section>
+    <div class="row" id="rstRow" style="margin-top:16px;align-items:center"></div>
+  </div>
+
+  <section class="card" id="summary" hidden>
+    <p class="pl">Koniec rundy</p>
+    <p class="sumbig" id="sumBig"></p>
+    <p class="msg ok" id="sumMsg"></p>
+    <p class="pl" id="wrongHead" hidden>Te pytania były źle (poprawna odpowiedź):</p>
+    <div class="wl" id="wrongList"></div>
+    <div class="row">
+      <button class="main" id="repWrong">Powtórz złe</button>
+      <button id="newRound">Nowa runda</button>
+    </div>
+  </section>
+  </div>
+
+  <p class="hint">wersja 19.10<br>Marcin Lechowicz</p>
+</main>
+
+<script>
+// Questions written from the book's content. First answer is the correct one (shuffled on screen).
+const STORY = [
+  {c:1, q:'Jakiej rasy była Betty?', a:['bernardyn','owczarek niemiecki','labrador','husky']},
+  {c:1, q:'Skąd chłopiec z tatą zabrali Betty?', a:['ze schroniska dla zwierząt','od hodowcy psów','od dziadka ze wsi','ze sklepu zoologicznego']},
+  {c:1, q:'W jaki dzień Betty została odebrana złym właścicielom?', a:['w Wigilię','w Wielkanoc','w pierwszy dzień wakacji','w Sylwestra']},
+  {c:1, q:'Jak Betty mieszkała u poprzednich właścicieli?', a:['na krótkim sznurku pod ścianą, chroniona tylko jedną deską','w ciepłej, drewnianej budzie','w domu, na kanapie','w dużym kojcu z innymi psami']},
+  {c:1, q:'Kto zawiadomił, że Betty jest źle traktowana?', a:['sąsiedzi','listonosz','weterynarz','policjant']},
+  {c:1, q:'Jak udało się przenieść Betty do samochodu?', a:['zasłonięto jej oczy chustką','zwabiono ją kością','dostała lekarstwo na sen','sama wskoczyła do auta']},
+  {c:1, q:'Kto wymyślił, żeby zasłonić Betty oczy?', a:['tata','mama','Adam','szefowa schroniska']},
+  {c:1, q:'Jakiego koloru była sierść Betty?', a:['rudo-biała','czarna','szara','złota']},
+  {c:2, q:'Gdzie Betty schowała się pierwszego dnia w nowym domu?', a:['w kącie pod schodami w ogrodzie','pod łóżkiem Adama','w garażu','w piwnicy']},
+  {c:2, q:'Kiedy Betty jadła na początku?', a:['tylko nocą, po kryjomu','rano, przy wszystkich','tylko z ręki Adama','tylko w południe']},
+  {c:3, q:'Co tata zrobił dla Betty?', a:['zbił z desek budę','postawił nowy płot','kupił jej obrożę ze złota','zbudował basen']},
+  {c:3, q:'Jakich kości tata zabronił dawać Betty?', a:['kości z kurczaka','kości wołowych','surowych kości','żadnych, wszystkie były dozwolone']},
+  {c:4, q:'O czym Adam opowiadał Betty przed wyjściem do szkoły?', a:['o zadaniach, klasówkach i wypracowaniach','o filmach z telewizji','o wakacjach u dziadka','o swoich kolegach z podwórka']},
+  {c:7, q:'Ile lat miał Adam, gdy zamieszkała z nim Betty?', a:['10','8','12','7']},
+  {c:7, q:'Jakie zwierzęta miał Adam w domu, zanim pojawiła się Betty?', a:['chomika, rybki i ślimaki','kota i papugę','królika i żółwia','dwa koty']},
+  {c:7, q:'Jakie rany według taty goją się najdłużej?', a:['te w środku, w serduszku','rany na łapach','rany na grzbiecie','zadrapania na nosie']},
+  {c:8, q:'Co rodzice postanowili, gdy Betty długo się nie zmieniała?', a:['że jeśli do końca miesiąca nie wyjdzie z traumy, oddadzą ją','że kupią drugiego psa do towarzystwa','że przeprowadzą się na wieś','że zatrudnią tresera']},
+  {c:8, q:'Jak Adam dowiedział się o planach rodziców?', a:['podsłuchał ich rozmowę','przeczytał list','powiedział mu Kuba','zobaczył ogłoszenie']},
+  {c:9, q:'Co zrobił Adam, gdy pracownicy schroniska przyjechali po Betty?', a:['wziął smycz i pobiegł z nią na łąkę','schował ją w piwnicy','zamknął bramę na klucz','zadzwonił do dziadka']},
+  {c:9, q:'Jak długo trwał pierwszy spacer Adama i Betty?', a:['około dziesięciu minut','cały dzień','godzinę','dwie minuty']},
+  {c:10, q:'W jakim czasie Betty nauczyła się większości komend?', a:['w niecały miesiąc','w jeden dzień','w tydzień','w rok']},
+  {c:10, q:'Której z tych rzeczy Adam nauczył Betty?', a:['przynosić gazetę','otwierać drzwi','liczyć do pięciu','skakać przez rowy']},
+  {c:10, q:'Gdzie spała Betty, gdy już się oswoiła?', a:['w pokoju Adama, na swoim posłaniu','w budzie pod schodami','w kuchni','w samochodzie taty']},
+  {c:11, q:'Co było ulubioną zabawą Betty?', a:['gryzienie surowych kości','aportowanie piłki','pływanie w stawie','gonienie kotów']},
+  {c:11, q:'Czego Betty się bała i nie chciała robić?', a:['skakać przez dołki i rowy','chodzić na smyczy','jeździć samochodem','spać w domu']},
+  {c:12, q:'Dlaczego Adam zaczął karmić Betty słodyczami i kanapkami?', a:['był zazdrosny o kolegów','Betty była chora','tak kazał weterynarz','pozwoliła mu mama']},
+  {c:12, q:'Czego Adam dowiedział się u weterynarza?', a:['że od słodyczy psom psują się zęby','że psy nie czują smaku','że psy muszą jeść pięć razy dziennie','że czekolada jest dla psów zdrowa']},
+  {c:13, q:'Co zaszkodziło Betty wiosną w lesie?', a:['kleszcz','żmija','pszczoła','zatrute jedzenie']},
+  {c:13, q:'Czego nauczyła Adama opieka nad Betty?', a:['odpowiedzialności i opiekuńczości','gry na pianinie','pływania','jazdy konnej']},
+  {c:13, q:'Jak nazywała się zabawa Adama w drodze ze szkoły?', a:['podskoki bociana','skoki żabki','kroki słonia','bieg zająca']},
+  {c:13, q:'Ile mniej więcej trwała droga Adama ze szkoły do domu?', a:['około 40 minut','5 minut','2 godziny','15 minut']},
+  {c:14, q:'Co przydarzyło się Adamowi jesienią w drodze ze szkoły?', a:['potrącił go samochód i wpadł do rowu','zgubił się w lesie','spadł z roweru','ugryzł go obcy pies']},
+  {c:14, q:'Za co kierowca ciężarówki uznał uderzenie?', a:['za lisa','za kamień','za sarnę','za dziurę w drodze']},
+  {c:14, q:'Dlaczego Adam starał się nie zasnąć w rowie?', a:['bał się, że jego ciało się wychłodzi','bał się ciemności','czekał na autobus','chciał liczyć gwiazdy']},
+  {c:15, q:'Gdzie mama zadzwoniła najpierw, gdy Adam nie wrócił?', a:['do sekretariatu szkoły','na policję','do babci','do weterynarza']},
+  {c:15, q:'Jak miał na imię najlepszy przyjaciel Adama?', a:['Kuba','Tomek','Bartek','Michał']},
+  {c:16, q:'W rejonie jakiej puszczy szukano chłopca?', a:['Puszczy Białej','Puszczy Kampinoskiej','Puszczy Białowieskiej','Puszczy Noteckiej']},
+  {c:17, q:'Jak Betty pomogła Adamowi, gdy go znalazła?', a:['położyła się na nim, żeby go ogrzać','zaniosła go do domu','przyniosła mu koc','przyprowadziła mamę']},
+  {c:17, q:'Jak Betty sprowadziła pomoc?', a:['głośno szczekała na poszukiwaczy i wskazała drogę','zadzwoniła dzwonkiem do drzwi','pobiegła do szkoły','przyniosła czapkę Adama do domu']},
+  {c:17, q:'Kto rozpoznał Betty podczas poszukiwań?', a:['mężczyzna, który widział ją w schronisku','wychowawczyni Adama','Kuba','sąsiad z naprzeciwka']},
+  {c:17, q:'Co Betty powiedziała Adamowi we śnie?', a:['że wszystkie zwierzęta są równe, tak samo czują i potrzebują uwagi','że chce wrócić do schroniska','że jest głodna','że trzeba uciekać z lasu']},
+  {c:17, q:'Jakie obrażenia miał Adam po wypadku?', a:['złamaną rękę i obojczyk','złamaną nogę','tylko zadrapanie kolana','żadnych']},
+  {c:18, q:'Jak ma na imię córka Betty?', a:['Lila','Bella','Luna','Fiona']},
+  {c:18, q:'Kim jest Adam, gdy dorósł?', a:['strażnikiem w Policji dla Zwierząt','weterynarzem','nauczycielem','kierowcą ciężarówki']},
+  {c:18, q:'Czyje słowa o stosunku człowieka do zwierząt przyświecają dorosłemu Adamowi?', a:['świętego Franciszka','dziadka','kierowniczki schroniska','wychowawczyni']},
+  {c:0, q:'Kto opowiada tę historię?', a:['Adam, właściciel Betty','Betty','tata Adama','Kuba']},
+  {c:0, q:'Jaka jest najważniejsza nauka z tej książki?', a:['zwierzęta czują tak jak ludzie i trzeba o nie dbać','psy powinny mieszkać tylko na dworze','do psa nie trzeba być cierpliwym','najlepsze są psy ze sklepu']},
+];
+
+// Words explained in the book's footnotes
+const WORDS = [
+  ['schronisko', 'miejsce dla bezdomnych, porzuconych lub zagubionych zwierząt'],
+  ['solidaryzować się', 'łączyć się z kimś w uczuciach, czuć to samo'],
+  ['fetor', 'smród'],
+  ['inicjatywa', 'podjęcie jakiegoś działania'],
+  ['trauma', 'stan po bardzo trudnych, ciężkich przeżyciach'],
+  ['CB-radio', 'urządzenie do rozmawiania z innymi przez fale radiowe'],
+  ['hipoteza', 'przypuszczenie'],
+  ['kwadrat (w akcji poszukiwawczej)', 'wydzielona część terenu, którą się przeszukuje'],
+  ['interwencja', 'szybkie działanie, żeby zmienić trudną sytuację'],
+];
+
+const ROUND = 10;
+let mode = 'story';
+let queue = [], idx = 0, good = 0, bad = 0, wrong = [], answered = false, timer = null;
+
+const $ = id => document.getElementById(id);
+const KEY = 'lektura-v1';
+try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d && d.mode === 'words') mode = 'words'; } catch (e) {}
+function saveSettings(){ try { localStorage.setItem(KEY, JSON.stringify({ mode })); } catch (e) {} }
+
+function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+// ---- Polish speech ----
+function speak(text){
+  try {
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'pl-PL'; u.rate = 0.95;
+    const v = speechSynthesis.getVoices().find(x => x.lang && x.lang.toLowerCase().startsWith('pl')); if (v) u.voice = v;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function sayTask(){ if (idx < queue.length) speak(queue[idx].q); }
+
+// Build a round as uniform items {q, ok, opts, chap}
+function makeQueue(){
+  if (mode === 'words'){
+    return shuffle(WORDS.map(([w, def]) => {
+      const others = shuffle(WORDS.filter(x => x[0] !== w).map(x => x[1])).slice(0, 3);
+      return { q: `Co znaczy słowo „${w}”?`, ok: def, opts: [def, ...others], chap: '' };
+    }));
+  }
+  return shuffle(STORY.slice()).slice(0, ROUND)
+    .map(x => ({ q: x.q, ok: x.a[0], opts: x.a.slice(), chap: x.c }));
+}
+
+function renderToggles(){ document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode))); }
+document.querySelectorAll('#modes button').forEach(b => b.onclick = () => { mode = b.dataset.mode; saveSettings(); renderToggles(); newRound(); });
+
+function startRound(tasks){
+  clearTimeout(timer); timer = null;
+  queue = tasks; idx = 0; good = 0; bad = 0; wrong = [];
+  $('summary').hidden = true; $('game').hidden = false;
+  showTask();
+}
+function newRound(){ startRound(makeQueue()); }
+
+function showTask(){
+  if (idx >= queue.length) return finish();
+  answered = false;
+  const t = queue[idx];
+  $('task').textContent = t.q;
+  $('chap').textContent = t.chap ? `Rozdział ${t.chap}` : (mode === 'words' ? 'Słowniczek z książki' : 'Cała książka');
+  $('qpos').textContent = `Pytanie ${idx + 1} / ${queue.length}`;
+  $('good').textContent = good; $('bad').textContent = bad;
+  $('prog').style.width = (idx / queue.length * 100) + '%';
+  $('msg').textContent = ''; $('msg').className = 'msg';
+  $('nextBtn').textContent = 'Pomiń';
+  const box = $('choiceBox'); box.innerHTML = '';
+  shuffle(t.opts.slice()).forEach(v => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.textContent = v;
+    btn.onclick = () => {
+      if (answered) return;
+      box.querySelectorAll('button').forEach(x => { x.disabled = true; if (x.textContent === t.ok) x.classList.add('ok'); });
+      if (v !== t.ok) btn.classList.add('bad');
+      judge(v === t.ok);
+    };
+    box.appendChild(btn);
+  });
+}
+
+const praise = ['Super! 🎉', 'Brawo! ⭐', 'Świetnie! 👏', 'Dobrze! ✅', 'Ekstra! 🚀'];
+function judge(ok){
+  answered = true;
+  const t = queue[idx], m = $('msg');
+  if (ok){
+    good++; m.textContent = praise[Math.floor(Math.random() * praise.length)]; m.className = 'msg ok pop';
+    timer = setTimeout(next, 1100);
+  } else {
+    bad++; wrong.push(t);
+    m.textContent = 'Poprawna odpowiedź jest zaznaczona na zielono.'; m.className = 'msg bad pop';
+    $('nextBtn').textContent = 'Dalej';
+  }
+  $('good').textContent = good; $('bad').textContent = bad;
+}
+
+function next(){
+  clearTimeout(timer); timer = null;
+  if (!answered){ bad++; wrong.push(queue[idx]); }
+  idx++; showTask();
+}
+
+function finish(){
+  $('prog').style.width = '100%';
+  $('game').hidden = true; $('summary').hidden = false;
+  $('sumBig').textContent = `${good} / ${queue.length}`;
+  const pct = good / queue.length;
+  $('sumMsg').textContent = pct === 1 ? 'Bezbłędnie! 🏆' : pct >= .7 ? 'Bardzo dobrze! 💪' : 'Przeczytaj jeszcze raz ten fragment, dasz radę! 🙂';
+  $('wrongHead').hidden = wrong.length === 0;
+  $('repWrong').hidden = wrong.length === 0;
+  const wl = $('wrongList'); wl.innerHTML = '';
+  wrong.forEach(t => {
+    const d = document.createElement('div');
+    const b = document.createElement('b'); b.textContent = t.q + ' ';
+    const s = document.createElement('span'); s.textContent = '→ ' + t.ok;
+    d.append(b, s); wl.appendChild(d);
+  });
+}
+
+$('nextBtn').onclick = next;
+$('spkBtn').onclick = sayTask;
+$('newRound').onclick = newRound;
+$('repWrong').onclick = () => startRound(shuffle(wrong.slice()));
+
+// ---- player name (shared with Tabliczka and Literki) ----
+let nameCleared = false;
+function playerName(){
+  try { const n = localStorage.getItem('tabliczka-name'); if (n) return n; if (n === '' || nameCleared) return ''; } catch (e) {}
+  try { const d = JSON.parse(localStorage.getItem('literki-v1') || 'null'); if (d && d.name) return d.name; } catch (e) {}
+  return '';
+}
+function showName(){
+  const n = playerName(), has = !!n;
+  $('nameBox').hidden = has; $('app').hidden = !has; $('whoBtn').hidden = !has;
+  if (has) $('whoBtn').textContent = '👤 ' + n + ' · zmień';
+  else { clearTimeout(timer); timer = null; $('nameIn').value = ''; setTimeout(() => $('nameIn').focus(), 50); }
+}
+$('nameBox').onsubmit = e => {
+  e.preventDefault();
+  let n = $('nameIn').value.trim().slice(0, 20);
+  if (!n){ $('nameIn').focus(); return; }
+  n = n.charAt(0).toUpperCase() + n.slice(1);
+  try { localStorage.setItem('tabliczka-name', n); } catch (e) {}
+  showName(); newRound();
+};
+$('whoBtn').onclick = () => { try { localStorage.setItem('tabliczka-name', ''); } catch (e) {} nameCleared = true; showName(); };
+
+// ---- restart with inline confirmation ----
+function rstUI(ask){
+  const r = $('rstRow'); r.innerHTML = '';
+  const mk = (t, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; if (cls) b.className = cls; b.onclick = fn; r.appendChild(b); };
+  if (ask){
+    const q = document.createElement('span'); q.className = 'q'; q.style.cssText = 'font-size:1rem;width:100%;text-align:center;color:var(--muted)';
+    q.textContent = 'Zacząć od nowa? Wynik tej rundy się wyzeruje.'; r.appendChild(q);
+    mk('Tak, od nowa', 'main', () => { rstUI(false); newRound(); });
+    mk('Anuluj', '', () => rstUI(false));
+  } else mk('Zacznij od nowa', 'sm', () => rstUI(true));
+}
+rstUI(false);
+
+renderToggles();
+showName();
+if (playerName()) newRound();
+</script>
+</body>
+</html>
