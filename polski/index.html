@@ -148,10 +148,20 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
       <button class="main" id="repWrong">Powtórz złe</button>
       <button id="newRound">Nowa runda</button>
     </div>
+    <form class="rankform" id="rankForm" hidden autocomplete="off">
+      <button class="main" type="submit" id="rankSend">🏆 Dodaj do rankingu</button>
+    </form>
+    <p class="hint" id="rankMsg" hidden></p>
   </section>
+
+  <details class="rankbox" id="rankBox">
+    <summary>🏆 Ranking</summary>
+    <ol class="rank" id="rankList"></ol>
+    <p class="hint" id="rankInfo"></p>
+  </details>
   </div>
 
-  <p class="hint">wersja 19.10<br>Marcin Lechowicz</p>
+  <p class="hint">wersja 19.10 · ranking<br>Marcin Lechowicz</p>
 </main>
 
 <script>
@@ -222,6 +232,7 @@ const WORDS = [
 const ROUND = 10;
 let mode = 'story';
 let queue = [], idx = 0, good = 0, bad = 0, wrong = [], answered = false, timer = null;
+let ranked = false, rankable = false;
 
 const $ = id => document.getElementById(id);
 const KEY = 'lektura-v1';
@@ -255,8 +266,11 @@ function makeQueue(){
 function renderToggles(){ document.querySelectorAll('#modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode))); }
 document.querySelectorAll('#modes button').forEach(b => b.onclick = () => { mode = b.dataset.mode; saveSettings(); renderToggles(); newRound(); });
 
-function startRound(tasks){
+function startRound(tasks, isRepeat){
   clearTimeout(timer); timer = null;
+  // Only full, fresh rounds of "Treść książki" count for the ranking
+  ranked = false; rankable = !isRepeat && mode === 'story' && tasks.length === ROUND;
+  $('rankForm').hidden = true; $('rankMsg').hidden = true;
   queue = tasks; idx = 0; good = 0; bad = 0; wrong = [];
   $('summary').hidden = true; $('game').hidden = false;
   showTask();
@@ -324,12 +338,61 @@ function finish(){
     const s = document.createElement('span'); s.textContent = '→ ' + t.ok;
     d.append(b, s); wl.appendChild(d);
   });
+  const rm = $('rankMsg');
+  if (rankable && !ranked){ $('rankForm').hidden = false; rm.hidden = true; }
+  else if (mode === 'words'){ $('rankForm').hidden = true; rm.hidden = false; rm.textContent = 'Do rankingu liczą się rundy „Treść książki”.'; }
+  else { $('rankForm').hidden = true; rm.hidden = true; }
 }
+
+/* ---- shared online ranking (Supabase, Literki's "scores" table, own mode) ---- */
+const RANK = { url: 'https://gmrkbgttpmyutjetotqb.supabase.co', key: 'sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc', mode: 'psie-troski' };
+let rankReq = 0;
+function rankHeaders(){ return RANK.key.startsWith('eyJ') ? { apikey: RANK.key, Authorization: 'Bearer ' + RANK.key } : { apikey: RANK.key }; }
+async function loadRank(){
+  const l = $('rankList'), info = $('rankInfo'), my = ++rankReq; l.innerHTML = ''; info.textContent = 'Wczytuję…';
+  try {
+    const res = await fetch(RANK.url + '/rest/v1/scores?select=name,good,total,created_at&mode=eq.' + RANK.mode + '&order=created_at.asc&limit=3000', { headers: rankHeaders() });
+    if (!res.ok) throw new Error(res.status);
+    const rows = await res.json(); if (my !== rankReq) return;
+    // Best result per person; on a tie the one who got it first stays ahead
+    const best = {};
+    rows.forEach(x => { const k = x.name.trim().toLowerCase(); if (!best[k] || x.good > best[k].good) best[k] = { name: x.name.trim(), good: x.good, total: x.total, at: x.created_at }; });
+    const top = Object.values(best).sort((a, b) => b.good - a.good || (a.at < b.at ? -1 : 1)).slice(0, 10);
+    const medal = ['🥇', '🥈', '🥉'], me = playerName().trim().toLowerCase();
+    let place = 0;
+    top.forEach((x, i) => {
+      if (i === 0 || x.good !== top[i - 1].good) place = i + 1;
+      const li = document.createElement('li'); if (x.name.toLowerCase() === me) li.className = 'me';
+      const a = document.createElement('span'); a.className = 'pos'; a.textContent = medal[place - 1] || String(place);
+      const n = document.createElement('span'); n.className = 'nm'; n.textContent = x.name;
+      const sc = document.createElement('span'); sc.className = 'sc'; sc.textContent = `${x.good}/${x.total}`;
+      li.append(a, n, sc); l.appendChild(li);
+    });
+    info.textContent = top.length ? 'Liczy się najlepszy wynik każdej osoby. Przy remisie wyżej jest ten, kto zdobył go pierwszy.' : 'Brak wyników. Bądź pierwszy!';
+  } catch (e) { if (my !== rankReq) return; info.textContent = 'Nie udało się wczytać rankingu. Sprawdź połączenie z internetem.'; }
+}
+$('rankForm').onsubmit = async e => {
+  e.preventDefault();
+  const name = playerName().trim().slice(0, 20);
+  if (!name){ showName(); return; }
+  const btn = $('rankSend'); btn.disabled = true; btn.textContent = 'Wysyłam…';
+  try {
+    const res = await fetch(RANK.url + '/rest/v1/scores', { method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }, rankHeaders()),
+      body: JSON.stringify({ name, mode: RANK.mode, good, total: queue.length }) });
+    if (!res.ok) throw new Error(res.status);
+    ranked = true; $('rankForm').hidden = true;
+    const m = $('rankMsg'); m.hidden = false; m.textContent = 'Dodano do rankingu! Zobacz niżej.';
+    const box = $('rankBox'); if (box.open) loadRank(); else box.open = true;
+  } catch (e) { btn.textContent = 'Nie udało się. Spróbuj ponownie'; }
+  btn.disabled = false; if (!ranked) setTimeout(() => { btn.textContent = '🏆 Dodaj do rankingu'; }, 2500); else btn.textContent = '🏆 Dodaj do rankingu';
+};
+$('rankBox').addEventListener('toggle', () => { if ($('rankBox').open) loadRank(); });
 
 $('nextBtn').onclick = next;
 $('spkBtn').onclick = sayTask;
 $('newRound').onclick = newRound;
-$('repWrong').onclick = () => startRound(shuffle(wrong.slice()));
+$('repWrong').onclick = () => startRound(shuffle(wrong.slice()), true);
 
 // ---- player name (shared with Tabliczka and Literki) ----
 let nameCleared = false;
