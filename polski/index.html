@@ -344,15 +344,15 @@ function finish(){
   else { $('rankForm').hidden = true; rm.hidden = true; }
 }
 
-/* ---- shared online ranking (Supabase, Literki's "scores" table, own mode) ---- */
-const RANK = { url: 'https://gmrkbgttpmyutjetotqb.supabase.co', key: 'sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc', mode: 'psie-troski' };
+/* ---- shared online ranking (Supabase, table quiz_scores, one row per finished round) ---- */
+const RANK = { url: 'https://gmrkbgttpmyutjetotqb.supabase.co', key: 'sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc', quiz: 'psie-troski' };
 let rankReq = 0;
 function rankHeaders(){ return RANK.key.startsWith('eyJ') ? { apikey: RANK.key, Authorization: 'Bearer ' + RANK.key } : { apikey: RANK.key }; }
 async function loadRank(){
   const l = $('rankList'), info = $('rankInfo'), my = ++rankReq; l.innerHTML = ''; info.textContent = 'Wczytuję…';
   try {
-    const res = await fetch(RANK.url + '/rest/v1/scores?select=name,good,total,created_at&mode=eq.' + RANK.mode + '&order=created_at.asc&limit=3000', { headers: rankHeaders() });
-    if (!res.ok) throw new Error(res.status);
+    const res = await fetch(RANK.url + '/rest/v1/quiz_scores?select=name,good,total,created_at&quiz=eq.' + RANK.quiz + '&order=created_at.asc&limit=3000', { headers: rankHeaders() });
+    if (!res.ok) throw new Error(res.status + ' ' + (await res.text()).slice(0, 160));
     const rows = await res.json(); if (my !== rankReq) return;
     // Best result per person; on a tie the one who got it first stays ahead
     const best = {};
@@ -369,7 +369,7 @@ async function loadRank(){
       li.append(a, n, sc); l.appendChild(li);
     });
     info.textContent = top.length ? 'Liczy się najlepszy wynik każdej osoby. Przy remisie wyżej jest ten, kto zdobył go pierwszy.' : 'Brak wyników. Bądź pierwszy!';
-  } catch (e) { if (my !== rankReq) return; info.textContent = 'Nie udało się wczytać rankingu. Sprawdź połączenie z internetem.'; }
+  } catch (e) { if (my !== rankReq) return; info.textContent = 'Nie udało się wczytać rankingu (' + e.message + ').'; }
 }
 $('rankForm').onsubmit = async e => {
   e.preventDefault();
@@ -377,14 +377,14 @@ $('rankForm').onsubmit = async e => {
   if (!name){ showName(); return; }
   const btn = $('rankSend'); btn.disabled = true; btn.textContent = 'Wysyłam…';
   try {
-    const res = await fetch(RANK.url + '/rest/v1/scores', { method: 'POST',
+    const res = await fetch(RANK.url + '/rest/v1/quiz_scores', { method: 'POST',
       headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }, rankHeaders()),
-      body: JSON.stringify({ name, mode: RANK.mode, good, total: queue.length }) });
-    if (!res.ok) throw new Error(res.status);
+      body: JSON.stringify({ name, quiz: RANK.quiz, good, total: queue.length }) });
+    if (!res.ok) throw new Error(res.status + ' ' + (await res.text()).slice(0, 160));
     ranked = true; $('rankForm').hidden = true;
     const m = $('rankMsg'); m.hidden = false; m.textContent = 'Dodano do rankingu! Zobacz niżej.';
     const box = $('rankBox'); if (box.open) loadRank(); else box.open = true;
-  } catch (e) { btn.textContent = 'Nie udało się. Spróbuj ponownie'; }
+  } catch (e) { btn.textContent = 'Nie udało się. Spróbuj ponownie'; const m = $('rankMsg'); m.hidden = false; m.textContent = 'Błąd: ' + e.message; }
   btn.disabled = false; if (!ranked) setTimeout(() => { btn.textContent = '🏆 Dodaj do rankingu'; }, 2500); else btn.textContent = '🏆 Dodaj do rankingu';
 };
 $('rankBox').addEventListener('toggle', () => { if ($('rankBox').open) loadRank(); });
