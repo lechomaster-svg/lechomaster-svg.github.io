@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Lektura">
-<title>Quiz z lektury – Psie troski</title>
+<title>Quiz z lektury – Karolcia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -111,8 +111,8 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
 
   <div id="app" hidden style="display:flex;flex-direction:column;gap:20px">
   <div class="book">
-    <span class="ic" aria-hidden="true">🐕</span>
-    <div><p class="t">Psie troski</p><p class="a">Tom Justyniarski</p></div>
+    <span class="ic" aria-hidden="true">🔵</span>
+    <div><p class="t">Karolcia</p><p class="a">Maria Krüger</p></div>
   </div>
 
   <p class="lbl">Rodzaj quizu</p>
@@ -161,72 +161,160 @@ button:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
   </details>
   </div>
 
-  <p class="hint">wersja 19.10 · ranking<br>Marcin Lechowicz</p>
+  <p class="hint">wersja 25.11 · Karolcia<br>Marcin Lechowicz</p>
 </main>
 
 <script>
+// Chapter titles as in the book's table of contents (the book does not number them).
+const CHAPTERS = ['', 'Nowina', 'Zaczęło się zwyczajnie', 'Trochę o sąsiadach i o deszczowym dniu', 'Co było dalej',
+  'Gdzie jest koralik?', 'O ciociu Agato!', 'Autobus i inne rzeczy', 'Hura! Niewidzialni! Hura! Latamy!',
+  'Lepsze i gorsze pomysły', 'Co się działo dalej w piernikowym domku', 'W domu dzieją się dziwne rzeczy',
+  'Uwaga, bo co będzie dalej?...', 'Czerwony samochód po raz pierwszy', 'Kamienne lwy!', 'Panie prezydencie miasta!',
+  'Rzeczy chyba jeszcze dziwniejsze', 'Stop! Zatrzymać wóz!', 'Dziwne zwieżę', 'Nareszcie w ogrodzie!',
+  'Nie blednij, koraliczku!', 'Żegnaj, koraliku!'];
+
 // Questions written from the book's content. First answer is the correct one (shuffled on screen).
 const STORY = [
-  {c:1, q:'Jakiej rasy była Betty?', a:['bernardyn','owczarek niemiecki','labrador','husky']},
-  {c:1, q:'Skąd chłopiec z tatą zabrali Betty?', a:['ze schroniska dla zwierząt','od hodowcy psów','od dziadka ze wsi','ze sklepu zoologicznego']},
-  {c:1, q:'W jaki dzień Betty została odebrana złym właścicielom?', a:['w Wigilię','w Wielkanoc','w pierwszy dzień wakacji','w Sylwestra']},
-  {c:1, q:'Jak Betty mieszkała u poprzednich właścicieli?', a:['na krótkim sznurku pod ścianą, chroniona tylko jedną deską','w ciepłej, drewnianej budzie','w domu, na kanapie','w dużym kojcu z innymi psami']},
-  {c:1, q:'Kto zawiadomił, że Betty jest źle traktowana?', a:['sąsiedzi','listonosz','weterynarz','policjant']},
-  {c:1, q:'Jak udało się przenieść Betty do samochodu?', a:['zasłonięto jej oczy chustką','zwabiono ją kością','dostała lekarstwo na sen','sama wskoczyła do auta']},
-  {c:1, q:'Kto wymyślił, żeby zasłonić Betty oczy?', a:['tata','mama','Adam','szefowa schroniska']},
-  {c:1, q:'Jakiego koloru była sierść Betty?', a:['rudo-biała','czarna','szara','złota']},
-  {c:2, q:'Gdzie Betty schowała się pierwszego dnia w nowym domu?', a:['w kącie pod schodami w ogrodzie','pod łóżkiem Adama','w garażu','w piwnicy']},
-  {c:1, q:'Kiedy Betty jadła na początku?', a:['tylko nocą, po kryjomu','rano, przy wszystkich','tylko z ręki Adama','tylko w południe']},
-  {c:3, q:'Co tata zrobił dla Betty?', a:['zbił z desek budę','postawił nowy płot','kupił jej obrożę ze złota','zbudował basen']},
-  {c:3, q:'Jakich kości tata zabronił dawać Betty?', a:['kości z kurczaka','kości wołowych','surowych kości','żadnych, wszystkie były dozwolone']},
-  {c:4, q:'O czym Adam opowiadał Betty przed wyjściem do szkoły?', a:['o zadaniach, klasówkach i wypracowaniach','o filmach z telewizji','o wakacjach u dziadka','o swoich kolegach z podwórka']},
-  {c:7, q:'Ile lat miał Adam, gdy zamieszkała z nim Betty?', a:['10','8','12','7']},
-  {c:7, q:'Jakie zwierzęta miał Adam w domu, zanim pojawiła się Betty?', a:['chomika, rybki i ślimaki','kota i papugę','królika i żółwia','dwa koty']},
-  {c:7, q:'Jakie rany według taty goją się najdłużej?', a:['te w środku, w serduszku','rany na łapach','rany na grzbiecie','zadrapania na nosie']},
-  {c:8, q:'Co rodzice postanowili, gdy Betty długo się nie zmieniała?', a:['że jeśli do końca miesiąca nie wyjdzie z traumy, oddadzą ją','że kupią drugiego psa do towarzystwa','że przeprowadzą się na wieś','że zatrudnią tresera']},
-  {c:8, q:'Jak Adam dowiedział się o planach rodziców?', a:['podsłuchał ich rozmowę','przeczytał list','powiedział mu Kuba','zobaczył ogłoszenie']},
-  {c:9, q:'Co zrobił Adam, gdy pracownicy schroniska przyjechali po Betty?', a:['wziął smycz i pobiegł z nią na łąkę','schował ją w piwnicy','zamknął bramę na klucz','zadzwonił do dziadka']},
-  {c:9, q:'Jak długo trwał pierwszy spacer Adama i Betty?', a:['około dziesięciu minut','cały dzień','godzinę','dwie minuty']},
-  {c:10, q:'W jakim czasie Betty nauczyła się większości komend?', a:['w niecały miesiąc','w jeden dzień','w tydzień','w rok']},
-  {c:10, q:'Której z tych rzeczy Adam nauczył Betty?', a:['przynosić gazetę','otwierać drzwi','liczyć do pięciu','skakać przez rowy']},
-  {c:10, q:'Gdzie spała Betty, gdy już się oswoiła?', a:['w pokoju Adama, na swoim posłaniu','w budzie pod schodami','w kuchni','w samochodzie taty']},
-  {c:11, q:'Co było ulubioną zabawą Betty?', a:['gryzienie surowych kości','aportowanie piłki','pływanie w stawie','gonienie kotów']},
-  {c:11, q:'Czego Betty się bała i nie chciała robić?', a:['skakać przez dołki i rowy','chodzić na smyczy','jeździć samochodem','spać w domu']},
-  {c:12, q:'Dlaczego Adam zaczął karmić Betty słodyczami i kanapkami?', a:['był zazdrosny o kolegów','Betty była chora','tak kazał weterynarz','pozwoliła mu mama']},
-  {c:12, q:'Czego Adam dowiedział się u weterynarza?', a:['że od słodyczy psom psują się zęby','że psy nie czują smaku','że psy muszą jeść pięć razy dziennie','że czekolada jest dla psów zdrowa']},
-  {c:13, q:'Co zaszkodziło Betty wiosną w lesie?', a:['kleszcz','żmija','pszczoła','zatrute jedzenie']},
-  {c:13, q:'Czego nauczyła Adama opieka nad Betty?', a:['odpowiedzialności i opiekuńczości','gry na pianinie','pływania','jazdy konnej']},
-  {c:13, q:'Jak nazywała się zabawa Adama w drodze ze szkoły?', a:['podskoki bociana','skoki żabki','kroki słonia','bieg zająca']},
-  {c:13, q:'Ile mniej więcej trwała droga Adama ze szkoły do domu?', a:['około 40 minut','5 minut','2 godziny','15 minut']},
-  {c:14, q:'Co przydarzyło się Adamowi jesienią w drodze ze szkoły?', a:['potrącił go samochód i wpadł do rowu','zgubił się w lesie','spadł z roweru','ugryzł go obcy pies']},
-  {c:14, q:'Za co kierowca ciężarówki uznał uderzenie?', a:['za lisa','za kamień','za sarnę','za dziurę w drodze']},
-  {c:14, q:'Dlaczego Adam starał się nie zasnąć w rowie?', a:['bał się, że jego ciało się wychłodzi','bał się ciemności','czekał na autobus','chciał liczyć gwiazdy']},
-  {c:15, q:'Gdzie mama zadzwoniła najpierw, gdy Adam nie wrócił?', a:['do sekretariatu szkoły','na policję','do babci','do weterynarza']},
-  {c:15, q:'Jak miał na imię najlepszy przyjaciel Adama?', a:['Kuba','Tomek','Bartek','Michał']},
-  {c:16, q:'W rejonie jakiej puszczy szukano chłopca?', a:['Puszczy Białej','Puszczy Kampinoskiej','Puszczy Białowieskiej','Puszczy Noteckiej']},
-  {c:17, q:'Jak Betty pomogła Adamowi, gdy go znalazła?', a:['położyła się na nim, żeby go ogrzać','zaniosła go do domu','przyniosła mu koc','przyprowadziła mamę']},
-  {c:17, q:'Jak Betty sprowadziła pomoc?', a:['głośno szczekała na poszukiwaczy i wskazała drogę','zadzwoniła dzwonkiem do drzwi','pobiegła do szkoły','przyniosła czapkę Adama do domu']},
-  {c:17, q:'Kto rozpoznał Betty podczas poszukiwań?', a:['mężczyzna, który widział ją w schronisku','wychowawczyni Adama','Kuba','sąsiad z naprzeciwka']},
-  {c:17, q:'Co Betty powiedziała Adamowi we śnie?', a:['że wszystkie zwierzęta są równe, tak samo czują i potrzebują uwagi','że chce wrócić do schroniska','że jest głodna','że trzeba uciekać z lasu']},
-  {c:17, q:'Jakie obrażenia miał Adam po wypadku?', a:['złamaną rękę i obojczyk','złamaną nogę','tylko zadrapanie kolana','żadnych']},
-  {c:18, q:'Jak ma na imię córka Betty?', a:['Lila','Bella','Luna','Fiona']},
-  {c:18, q:'Kim jest Adam, gdy dorósł?', a:['strażnikiem w Policji dla Zwierząt','weterynarzem','nauczycielem','kierowcą ciężarówki']},
-  {c:18, q:'Czyje słowa o stosunku człowieka do zwierząt przyświecają dorosłemu Adamowi?', a:['świętego Franciszka','dziadka','kierowniczki schroniska','wychowawczyni']},
-  {c:0, q:'Kto opowiada tę historię?', a:['Adam, właściciel Betty','Betty','tata Adama','Kuba']},
-  {c:0, q:'Jaka jest najważniejsza nauka z tej książki?', a:['zwierzęta czują tak jak ludzie i trzeba o nie dbać','psy powinny mieszkać tylko na dworze','do psa nie trzeba być cierpliwym','najlepsze są psy ze sklepu']},
+  {c:1, q:'Ile lat miała Karolcia, gdy zaczyna się opowiadanie?', a:['osiem lat i osiem miesięcy','siedem lat','dziesięć lat','dziewięć lat']},
+  {c:1, q:'Jakie oczy miała Karolcia?', a:['kocie – duże, okrągłe i zielonkawe','niebieskie jak koralik','małe i czarne','brązowe jak orzeszki']},
+  {c:1, q:'Do której klasy przechodziła Karolcia?', a:['do trzeciej','do drugiej','do czwartej','do pierwszej']},
+  {c:1, q:'Jak miała na imię prawie łysa lalka, którą Karolcia zabrała do nowego mieszkania?', a:['Ewelinka','Agasia','Gracja','Jania']},
+  {c:1, q:'Na jaką ulicę przeprowadziła się rodzina Karolci?', a:['na Kwiatową','na Różaną','na Lipową','na Słoneczną']},
+  {c:1, q:'Co Karolcia narysowała w kalendarzu na dzień przeprowadzki?', a:['czerwony kwiatek','niebieski koralik','słoneczko','serduszko']},
+  {c:2, q:'Gdzie Karolcia znalazła niebieski koralik?', a:['w szparze podłogi, gdzie dawniej stał kredens','pod poduszką','w kieszeni płaszcza','w pudełku z zabawkami']},
+  {c:2, q:'Jaki kształt miał koralik?', a:['podłużny jak fasolka','okrągły jak kulka','w kształcie serduszka','kwadratowy']},
+  {c:2, q:'Czym Karolcia wydłubała koralik ze szpary?', a:['drzazgą','widelcem','szpilką','nożyczkami']},
+  {c:2, q:'Z kim Karolcia jechała taksówką do nowego mieszkania?', a:['z ciotką Agatą','z mamą','z tatusiem','z Piotrem']},
+  {c:2, q:'Czego zachciało się Karolci w korku, zanim wiedziała o czarach koralika?', a:['żeby taksówka mogła fruwać','żeby zniknęła owsianka','żeby być dorosłą','żeby być niewidzialną']},
+  {c:2, q:'Co ciotka Agata kupiła sobie w domu towarowym?', a:['kapelusz z fiołkami','parasol','torebkę','ciastka z kremem']},
+  {c:2, q:'Czego chciała sprzedawczyni w dziale zabawek w zamian za lalkę?', a:['niebieskiego koralika','pieniędzy','lalki Ewelinki','całusa']},
+  {c:2, q:'Kim według taksówkarza była Filomena?', a:['najbardziej chytrą z czarownic','dobrą wróżką','dyrektorką sklepu','ciotką Karolci']},
+  {c:2, q:'Jaki nos miała Filomena?', a:['długi, spiczasty, podobny do bocianiego dzioba','mały i zadarty','okrągły jak kartofelek','krótki i płaski']},
+  {c:2, q:'Ile kosztował kurs taksówką na Kwiatową?', a:['9 złotych i 20 groszy','20 złotych','5 złotych','7 złotych i 50 groszy']},
+  {c:3, q:'Na którym piętrze mieszka Piotr?', a:['na drugim, tuż nad Karolcią','na parterze','na trzecim','na pierwszym, obok Karolci']},
+  {c:3, q:'Czym interesuje się Piotr?', a:['geografią i czytaniem','piłką nożną','gotowaniem','muzyką']},
+  {c:3, q:'Jak ma na imię siostrzyczka Leszka?', a:['Jania','Agasia','Dorota','Ewelinka']},
+  {c:3, q:'Jak nazywali się dwaj bracia, którzy napadali na inne dzieci?', a:['Waldek i Robert','Leszek i Piotr','Jacek i Placek','Tomek i Bartek']},
+  {c:3, q:'Jak nazywała się kotka Karolci?', a:['Gracja','Mruczka','Filomena','Kicia']},
+  {c:3, q:'Jak nazywał się pies pani dozorczyni?', a:['Nero','Burek','Azor','Reksio']},
+  {c:3, q:'Po co Karolcia chodziła rano do piekarni?', a:['po bułki','po tort','po pączki','po chleb dla psa']},
+  {c:3, q:'Gdzie koralik pierwszy raz odezwał się do Karolci?', a:['w łazience, gdy myła go mydłem','w taksówce','w szkole','w łóżku w nocy']},
+  {c:3, q:'Przed kim koralik schował się w szparze podłogi?', a:['przed Filomeną','przed kotką Gracją','przed ciotką Agatą','przed Waldkiem']},
+  {c:3, q:'W co zamienił się koralik w łazience, żeby porozmawiać z Karolcią?', a:['w dużą bańkę mydlaną','w motylka','w małego ludzika','w niebieską rybkę']},
+  {c:3, q:'Co koralik może zrobić dla osoby, która trzyma go w dłoni?', a:['spełnić każde jej życzenie','zamienić ją w kota','pokazać przyszłość','tylko świecić w nocy']},
+  {c:3, q:'Co stało się z owsianką na talerzu Karolci?', a:['zniknęła dzięki życzeniu','zjadła ją kotka','Karolcia ją wylała','zjadła ją ciotka Agata']},
+  {c:4, q:'Co nagle pojawiło się na stole w kuchni, gdy Karolcia pomyślała o zakupach ciotki?', a:['żywa kura','wielki tort','koszyk jajek','duża ryba']},
+  {c:4, q:'Gdzie pracowała mama Karolci?', a:['w szpitalu','w szkole','w sklepie','na poczcie']},
+  {c:4, q:'Co się stało, gdy Karolcia powiedziała, że chce jak najprędzej być dorosła?', a:['zamieniła się w dorosłą panią i mama jej nie poznała','urosła wysoko jak drzewo','dostała świadectwo','pojechała z mamą do pracy']},
+  {c:5, q:'Jak dorosła Karolcia zeszła ze schodów, bo przeszkadzały jej wysokie obcasy?', a:['zsunęła się po poręczy','zjechała windą','sfrunęła','zeszła tyłem']},
+  {c:5, q:'W co bawiły się na podwórku Dorota i Agasia?', a:['w klasy','w berka','w chowanego','w piłkę']},
+  {c:5, q:'Kto oszukiwał w czasie gry w klasy?', a:['Dorota','Agasia','Leszek','Jania']},
+  {c:5, q:'Gdzie leżał zgubiony koralik, gdy Karolcia była dorosła?', a:['w przedpokoju, tuż pod ścianą','w kuchni pod stołem','na podwórku w trawie','w kieszeni mamy']},
+  {c:6, q:'Jak ma na imię mama Karolci?', a:['Ania','Agata','Dorota','Jania']},
+  {c:6, q:'Na czym Karolcia postanowiła nosić koralik?', a:['na mocnej różowej jedwabnej nitce na szyi','w bucie','we wstążce we włosach','na bransoletce']},
+  {c:6, q:'Za co ciotka Agata wzięła koralik?', a:['za guziczek od bluzeczki','za cukierek','za kolczyk','za szkiełko z okularów']},
+  {c:6, q:'Czego niechcący zażyczyła sobie ciotka Agata, trzymając koralik?', a:['całej tacy ciastek z kremem','lodów pistacjowych','pierniczków','kury na obiad']},
+  {c:6, q:'Kto pierwszy przyszedł w gości na ciastka?', a:['listonosz','tatuś','Piotr','pani Kowalska']},
+  {c:6, q:'Kim była pani w kapeluszu z parasolem, która szukała „zgubionego koralika”?', a:['Filomeną','panią Kozłowską','sąsiadką z oficyny','mamą Piotra']},
+  {c:7, q:'Jaki autobus przyjechał dla mamy w deszczowy dzień?', a:['pusty, nowy i czerwony','niebieski i zatłoczony','żółty szkolny','stary i zepsuty']},
+  {c:7, q:'Kogo Karolcia trzasnęła w nos na przystanku?', a:['dużego chłopaka, który odepchnął staruszkę','Waldka','kierowcę autobusu','Roberta']},
+  {c:7, q:'Co Karolcia chciała wygrać od Piotra w zakładzie?', a:['jego globus','znaczek z Australii','rower','hulajnogę']},
+  {c:7, q:'Czego według Piotra Karolcia na pewno nie potrafiła zrobić?', a:['stać się niewidzialną','fruwać','podnieść krzesła','zjeść owsianki']},
+  {c:7, q:'Co niewidzialna Karolcia podniosła, żeby Piotr uwierzył?', a:['ciężkie krzesło','stół','globus','kotkę Grację']},
+  {c:8, q:'Kogo niewidzialni Piotr i Karolcia przewrócili w błoto?', a:['Waldka','Leszka','Roberta','Dorotę']},
+  {c:8, q:'Komu Piotr pomógł nieść ciężki kosz ze sprawunkami?', a:['pani Kozłowskiej','pani Kowalskiej','ciotce Agacie','mamie Karolci']},
+  {c:8, q:'Czyją hulajnogą jeździła niewidzialna Karolcia?', a:['Doroty','Leszka','Agasi','Waldka']},
+  {c:8, q:'Kto odczepił sukienkę Karolci od anteny telewizyjnej?', a:['dwa gawrony','Piotr','strażak','czarny kot']},
+  {c:8, q:'Czego Piotr i Karolcia dowiedzieli się od gawronów?', a:['że są niewidzialni tylko dla ludzi','że koralik jest chory','że Filomena jest w Ratuszu','że ogród zostanie zamknięty']},
+  {c:8, q:'Co zjedli Piotr i Karolcia na tarasie domu towarowego?', a:['lody','pierniki','kanapki z szynką','ciastka z kremem']},
+  {c:9, q:'Co zrobiły buty przy stoisku niegrzecznej sprzedawczyni?', a:['zatańczyły wzdłuż lady','uciekły na ulicę','zaśpiewały piosenkę','zniknęły']},
+  {c:9, q:'Co mówili ludzie, widząc tańczące buty?', a:['że to reklama','że to duchy','że to sen','że to cyrk']},
+  {c:9, q:'Co Piotr wyciągnął z kieszeni złodziejaszka?', a:['jedwabny szalik','portfel','rękawiczki','chusteczkę w kratę']},
+  {c:9, q:'Czym przejechali się Piotr i Karolcia w dziale zabawek?', a:['małym samochodzikiem','rowerkiem','koniem na biegunach','hulajnogą']},
+  {c:9, q:'Z czego był zrobiony domek Baby Jagi w domu towarowym?', a:['wyglądał na piernikowy, ale był drewniany','z cukru','z prawdziwych cegieł','z kartonu po butach']},
+  {c:10, q:'Jakie pierniki dała dzieciom Baba Jaga?', a:['serduszka w czekoladzie','gwiazdki z lukrem','pierniki w kształcie kotów','pierniki z miodem']},
+  {c:10, q:'Co działo się z ludźmi, którzy zjedli zaczarowane serduszko?', a:['stawali się lepsi i dobrzy dla innych','zasypiali','stawali się niewidzialni','zaczynali fruwać']},
+  {c:10, q:'Kogo Karolcia zobaczyła w tłumie przy domku Baby Jagi?', a:['swoją mamę','ciotkę Agatę','tatusia','Leszka']},
+  {c:10, q:'W którym dziale Filomena zaplątała się i przewróciła?', a:['w dziale firanek','w dziale zabawek','w dziale butów','w dziale kapeluszy']},
+  {c:10, q:'Czym przechodząca pani zerwała niechcący nitkę z koralikiem?', a:['nową łyżką durszlakową','parasolem','torebką','nożyczkami']},
+  {c:10, q:'Kto przyjechał do Filomeny, gdy krzyczała na podłodze?', a:['pogotowie','straż pożarna','policja','dyrektor sklepu']},
+  {c:10, q:'Gdzie Karolcia schowała koralik, żeby był bezpieczny?', a:['w kieszeni płaszcza mamy','w bucie','w domku Baby Jagi','w kieszeni Piotra']},
+  {c:11, q:'Co Karolcia zostawiła ciotce Agacie na kredensie?', a:['paczuszkę z czekoladowymi serduszkami','list z przeprosinami','bukiet kwiatów','niebieski koralik']},
+  {c:11, q:'Czego przestraszyła się mama, gdy jej płaszcz się ruszał?', a:['że w środku jest szczur','że to złodziej','że to kotka','że to duch']},
+  {c:11, q:'Gdzie mama schowała koralik znaleziony w kieszeni?', a:['do portmonetki, zawinięty w papierek','do szuflady','do szkatułki na biżuterię','do cukierniczki']},
+  {c:12, q:'W czym Karolcia nosiła teraz koralik w kieszeni nowej sukienki?', a:['w pudełeczku od proszków, na różowej wacie','w portmonetce','w chusteczce do nosa','w pudełku zapałek']},
+  {c:12, q:'Co dzieje się z koralikiem po każdym spełnionym życzeniu?', a:['blednie, czyli traci kolor','rośnie','robi się cięższy','zmienia kształt']},
+  {c:12, q:'Kiedy koralik może mówić?', a:['tylko wtedy, kiedy jest wilgotny','tylko w nocy','tylko w niedzielę','zawsze']},
+  {c:12, q:'Co wyrosło przed dziećmi, gdy sprawdzały, czy to ten sam koralik?', a:['smukłe, młode drzewko','wielki grzyb','krzak róż','kolorowa karuzela']},
+  {c:12, q:'Co ogłoszono na tablicy przy ogrodzie?', a:['że ogród zamkną, a na jego miejscu zbudują restaurację','że w ogrodzie będzie cyrk','że ogród dostanie nową karuzelę','że zbudują tam basen']},
+  {c:12, q:'Od kiedy ogród miał być zamknięty?', a:['od 15 lipca','od 1 września','od 1 sierpnia','od Nowego Roku']},
+  {c:12, q:'Przez ile pokoi podobno trzeba przejść, żeby dostać się do Prezydenta Miasta?', a:['przez sto siedemnaście','przez dziesięć','przez trzysta siedemdziesiąt sześć','przez tysiąc']},
+  {c:13, q:'Gdzie stał wielki Ratusz?', a:['na Starym Rynku','przy ulicy Kwiatowej','obok Zoo','przy domu towarowym']},
+  {c:13, q:'Czym strażnik przy bramie Ratusza zamierzył się na Piotra?', a:['halabardą','parasolem','pałką','miotłą']},
+  {c:13, q:'Jakie auto Prezydenta najbardziej spodobało się Piotrowi?', a:['duże i długie, czerwono-czarne','małe i zielone','białe z niebieskim paskiem','żółte jak taksówka']},
+  {c:14, q:'Kto pomógł dzieciom dostać się do Ratusza, gdy brama była zamknięta?', a:['dwa kamienne lwy','dwa gawrony','Baba Jaga','woźny z herbatą']},
+  {c:14, q:'Jak lwy otworzyły zamknięte drzwi Ratusza?', a:['jeden lew dotknął ich łapą','wyważyły je','miały klucz','wpuścił je strażnik']},
+  {c:14, q:'Dokąd zaprowadziły ich strzałki na korytarzu?', a:['do muzeum miejskiego','do gabinetu Prezydenta','do piwnicy','do stołówki']},
+  {c:14, q:'Co zobaczyły dzieci z wycieczki szkolnej w muzeum?', a:['lwa, który drapał się w ucho','Prezydenta w zbroi','tańczące buty','Filomenę na miotle']},
+  {c:15, q:'Kogo dzieci zastały za biurkiem z gazetą?', a:['Filomenę','Prezydenta Miasta','ciotkę Agatę','strażnika']},
+  {c:15, q:'Kim była Filomena w Ratuszu?', a:['sekretarką Prezydenta','sprzątaczką','strażniczką','zastępczynią Prezydenta']},
+  {c:15, q:'Czym Filomena uderzyła lwa w nos?', a:['parasolem','halabardą','ołówkiem','teczką']},
+  {c:15, q:'O co poprosił Prezydent, żeby się upewnić, że nie śni?', a:['żeby go uszczypnęli','żeby go oblali wodą','żeby zaśpiewali','żeby podnieśli krzesło']},
+  {c:15, q:'Czym Karolcia poczęstowała głodnego Prezydenta?', a:['śniadaniem od ciotki Agaty z czekoladowymi serduszkami','lodami','pierogami','owsianką']},
+  {c:16, q:'Ile dokumentów Filomena kazałaby podpisać Prezydentowi, zanim wyjdzie?', a:['trzysta siedemdziesiąt sześć','sto siedemnaście','dziesięć','tysiąc']},
+  {c:16, q:'O czym od dziecka marzył Prezydent Miasta?', a:['żeby być niewidzialnym','żeby być kierowcą autobusu','żeby mieć lwa','żeby zamieszkać w Zoo']},
+  {c:16, q:'Jak Piotr odwrócił uwagę Filomeny, żeby Prezydent mógł uciec?', a:['zdmuchnął jej papiery z biurka','zgasił światło','zadzwonił telefonem','dał jej piernik']},
+  {c:16, q:'Co zrobił niewidzialny Prezydent w muzeum?', a:['przemaszerował w zbroi rycerskiej','zjadł obiad','namalował obraz','zasnął w fotelu']},
+  {c:17, q:'Którędy pojechali, żeby ominąć skrzyżowania i policję?', a:['autostradą naokoło miasta','przez park','przez rzekę','podziemnym tunelem']},
+  {c:17, q:'Dokąd Filomena i strażnicy zawieźli schwytane lwy?', a:['do Ogrodu Zoologicznego','do Ratusza','do cyrku','do domu towarowego']},
+  {c:18, q:'Na jakich zwierzętach Prezydent, Piotr i Karolcia jechali przez Zoo?', a:['na wielbłądach','na słoniach','na koniach','na lwach']},
+  {c:18, q:'Które zwierzęta ustawiły się rzędem i zaczęły trąbić?', a:['słonie','foki','małpy','niedźwiedzie']},
+  {c:18, q:'Kto wsunął Filomenie kapelusz na oczy i otworzył klatkę lwów?', a:['małpki kapucynki','foki','Prezydent','dyrektor Zoo']},
+  {c:18, q:'Kogo Piotr i Karolcia zamknęli w pustej klatce?', a:['Filomenę','strażnika','dyrektora Zoo','Waldka']},
+  {c:18, q:'Jaki napis Piotr zostawił na tabliczce przy klatce?', a:['„dziwne zwieżę” – z błędem','„lwy”','„czarownica”','„nie karmić”']},
+  {c:19, q:'Kto w imieniu dzieci podziękował Prezydentowi przy bramie ogrodu?', a:['Leszek','Waldek','Dorota','Agasia']},
+  {c:19, q:'Czym chciały zostać lwy na końcu przygody?', a:['lwami na karuzeli w ogrodzie','znów kamiennymi lwami przed Ratuszem','lwami w Zoo','lwami w cyrku']},
+  {c:19, q:'Co Prezydent zostawił w ogrodzie dla dzieci?', a:['swój czerwony samochód','swój kapelusz','rycerską zbroję','skrzypce']},
+  {c:19, q:'Jak Prezydent odjechał z ogrodu?', a:['autobusem, stojąc na stopniu','czerwonym autem','na lwie','taksówką']},
+  {c:20, q:'Której zupy nie lubiła Karolcia?', a:['jarzynowej','pomidorowej','rosołu','grochówki']},
+  {c:20, q:'Jaki był ulubiony kompot Karolci?', a:['z wiśni','z jabłek','z truskawek','ze śliwek']},
+  {c:20, q:'Dlaczego Karolcia nie chciała przy obiedzie prosić o kompot?', a:['trzymała akurat w ręku koralik','nie była spragniona','kompot był za zimny','zjadła już deser']},
+  {c:21, q:'O co Karolcia poprosiła koralik ostatnim życzeniem?', a:['żeby spełniły się marzenia wszystkich mieszkańców','o lalkę z domu towarowego','żeby koralik nie bladł','żeby Filomena zniknęła']},
+  {c:21, q:'Co dostał Leszek, gdy spełniły się marzenia?', a:['nowy rower','skakankę','piłkę do siatkówki','paczkę książek']},
+  {c:21, q:'O czym marzyła Agasia?', a:['o skakance','o rowerze','o wrotkach','o lalce']},
+  {c:21, q:'Co było największym marzeniem mamy Karolci?', a:['żeby wyzdrowiały wszystkie dzieci w szpitalu','nowy kapelusz','skuter','dziesięć białych kotów']},
+  {c:21, q:'Na czym zajechał tatuś Karolci?', a:['na nowym skuterze','na rowerze','na wielbłądzie','czerwonym autem']},
+  {c:21, q:'Kim okazał się pan Grzybek z mieszkania siedemnaście?', a:['najsłynniejszym skrzypkiem na świecie','Indianinem','Prezydentem Miasta','czarodziejem']},
+  {c:21, q:'Jakie było skryte marzenie Piotra?', a:['spotkać indiańskich wojowników ze szczepu Delawarów','dostać globus','zostać Prezydentem Miasta','mieć skuter']},
+  {c:21, q:'Jak Wódz Sokole Oko nazwał Karolcię?', a:['Płocha Sarenka','Mała Wiewiórka','Błękitny Koralik','Szybka Strzała']},
+  {c:21, q:'Jaki napis zawieszono zamiast tabliczki „Ulica Kwiatowa”?', a:['Szczęśliwy Zaułek','Ulica Koralikowa','Aleja Dzieci','Plac Marzeń']},
+  {c:21, q:'Co zostało w dłoni Karolci zamiast koralika?', a:['mała kropelka, jak rosa albo łza','kamyczek','piórko','niebieski guziczek']},
+  {c:0, q:'Kto napisał książkę „Karolcia”?', a:['Maria Krüger','Jan Brzechwa','Maria Konopnicka','Julian Tuwim']},
+  {c:0, q:'Kto był najlepszym przyjacielem Karolci w przygodach z koralikiem?', a:['Piotr','Leszek','Waldek','Robert']},
+  {c:0, q:'Kto przez całą książkę chciał zabrać Karolci koralik?', a:['Filomena','ciotka Agata','Baba Jaga','Prezydent Miasta']},
+  {c:0, q:'Czego uczy ta książka?', a:['trzeba ostrożnie wypowiadać życzenia i myśleć też o innych','najważniejsze są własne zabawki','czary zawsze są złe','warto słuchać czarownic']},
 ];
 
-// Words explained in the book's footnotes
+// Harder words that appear in the book
 const WORDS = [
-  ['schronisko', 'miejsce dla bezdomnych, porzuconych lub zagubionych zwierząt'],
-  ['solidaryzować się', 'łączyć się z kimś w uczuciach, czuć to samo'],
-  ['fetor', 'smród'],
-  ['inicjatywa', 'podjęcie jakiegoś działania'],
-  ['trauma', 'stan po bardzo trudnych, ciężkich przeżyciach'],
-  ['CB-radio', 'urządzenie do rozmawiania z innymi przez fale radiowe'],
-  ['hipoteza', 'przypuszczenie'],
-  ['kwadrat (w akcji poszukiwawczej)', 'wydzielona część terenu, którą się przeszukuje'],
-  ['interwencja', 'szybkie działanie, żeby zmienić trudną sytuację'],
+  ['kredens', 'kuchenna szafa na naczynia'],
+  ['kokosz', 'kura'],
+  ['szofer', 'kierowca samochodu'],
+  ['ekspedientka', 'sprzedawczyni w sklepie'],
+  ['halabarda', 'dawna broń na długim drzewcu, zakończona ostrzem'],
+  ['portiera', 'ciężka zasłona na drzwiach'],
+  ['podanie', 'pismo z prośbą do urzędu'],
+  ['załącznik', 'dokument dołączony do podania'],
+  ['dryblas', 'bardzo wysoki, duży chłopak'],
+  ['gawron', 'czarny ptak podobny do wrony'],
+  ['kapucynka', 'mała małpka'],
+  ['wigwam', 'namiot Indian'],
+  ['frak', 'elegancki czarny strój męski z długimi połami z tyłu'],
+  ['abażur', 'osłona na żarówkę w lampie'],
+  ['dozorczyni', 'pani, która pilnuje porządku w domu i na podwórku'],
+  ['oficyna', 'boczny lub tylny budynek przy kamienicy'],
+  ['portmonetka', 'mały portfel na pieniądze'],
+  ['reumatyzm', 'choroba, przy której bolą ręce, nogi i stawy'],
 ];
 
 const ROUND = 10;
@@ -235,7 +323,7 @@ let queue = [], idx = 0, good = 0, bad = 0, wrong = [], answered = false, timer 
 let ranked = false, rankable = false;
 
 const $ = id => document.getElementById(id);
-const KEY = 'lektura-v1';
+const KEY = 'lektura-karolcia-v1';
 try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d && d.mode === 'words') mode = 'words'; } catch (e) {}
 function saveSettings(){ try { localStorage.setItem(KEY, JSON.stringify({ mode })); } catch (e) {} }
 
@@ -282,7 +370,7 @@ function showTask(){
   answered = false;
   const t = queue[idx];
   $('task').textContent = t.q;
-  $('chap').textContent = t.chap ? `Rozdział ${t.chap}` : (mode === 'words' ? 'Słowniczek z książki' : 'Cała książka');
+  $('chap').textContent = t.chap ? `Rozdział: ${CHAPTERS[t.chap]}` : (mode === 'words' ? 'Słowniczek z książki' : 'Cała książka');
   $('qpos').textContent = `Pytanie ${idx + 1} / ${queue.length}`;
   $('good').textContent = good; $('bad').textContent = bad;
   $('prog').style.width = (idx / queue.length * 100) + '%';
@@ -345,7 +433,7 @@ function finish(){
 }
 
 /* ---- shared online ranking (Supabase, table quiz_scores, one row per finished round) ---- */
-const RANK = { url: 'https://gmrkbgttpmyutjetotqb.supabase.co', key: 'sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc', quiz: 'psie-troski' };
+const RANK = { url: 'https://gmrkbgttpmyutjetotqb.supabase.co', key: 'sb_publishable_YY9S71fMeWZBeNvc7QrDww_A_SQ6PKc', quiz: 'karolcia' };
 let rankReq = 0;
 function rankHeaders(){ return RANK.key.startsWith('eyJ') ? { apikey: RANK.key, Authorization: 'Bearer ' + RANK.key } : { apikey: RANK.key }; }
 async function loadRank(){
